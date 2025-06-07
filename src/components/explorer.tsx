@@ -7,7 +7,7 @@ interface ImagePreviewProps {
   onClick: () => void;
 }
 
-export function ImagePreview({ clip, onClick }: ImagePreviewProps) {
+export function Explorer({ clip, onClick }: ImagePreviewProps) {
   return (
     <div
       className={cn(

@@ -1,10 +1,10 @@
-import { ClipManager } from "@/components/clip-manager";
+import { Main } from "@/components/main";
 import "./App.css";
 
 export default function Home() {
   return (
-    <main className="w-screen h-screen p-4">
-      <ClipManager />
+    <main className="w-screen h-screen">
+      <Main />
     </main>
   );
 }
