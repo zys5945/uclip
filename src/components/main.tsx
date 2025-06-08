@@ -9,13 +9,13 @@ import {
 } from "react-resizable-panels";
 
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ImageDisplay } from "./image-display";
+import { ImageEditor } from "./image-editor";
 import { Explorer } from "./explorer";
 import { InfoPanel } from "./info-panel";
 
-import { useSelector } from "@xstate/store/react";
-import { useEffect, useRef, useState } from "react";
-import { clipStore } from "./clip";
+import { useEffect, useState } from "react";
+
+import shinoa from "@/assets/shinoa.jpg";
 
 const previewMinWidthPx = 300;
 const propertiesMinWidthPx = 500;
@@ -24,31 +24,30 @@ export function Main() {
   const [previewMinSize, setPreviewMinSize] = useState(20);
   const [propertiesMinSize, setPropertiesMinSize] = useState(20);
 
-  const clips = useSelector(clipStore, (state) => state.context.clips);
+  const image =
+    // pseudo pixel-based min sizes
+    useEffect(() => {
+      const onResize = () => {
+        const panelGroupWidth = getPanelGroupElement(
+          "clip-manager-panel-group"
+        )?.offsetWidth;
+        const resizeHandleWidth = getResizeHandleElement(
+          "clip-manager-resize-handle-0"
+        )?.offsetWidth;
 
-  // pseudo pixel-based min sizes
-  useEffect(() => {
-    const onResize = () => {
-      const panelGroupWidth = getPanelGroupElement(
-        "clip-manager-panel-group"
-      )?.offsetWidth;
-      const resizeHandleWidth = getResizeHandleElement(
-        "clip-manager-resize-handle-0"
-      )?.offsetWidth;
+        if (!panelGroupWidth || !resizeHandleWidth) return;
 
-      if (!panelGroupWidth || !resizeHandleWidth) return;
+        const availableWidth = panelGroupWidth - 2 * resizeHandleWidth;
 
-      const availableWidth = panelGroupWidth - 2 * resizeHandleWidth;
+        setPreviewMinSize((previewMinWidthPx / availableWidth) * 100);
+        setPropertiesMinSize((propertiesMinWidthPx / availableWidth) * 100);
+      };
 
-      setPreviewMinSize((previewMinWidthPx / availableWidth) * 100);
-      setPropertiesMinSize((propertiesMinWidthPx / availableWidth) * 100);
-    };
-
-    window.addEventListener("resize", onResize);
-    return () => {
-      window.removeEventListener("resize", onResize);
-    };
-  });
+      window.addEventListener("resize", onResize);
+      return () => {
+        window.removeEventListener("resize", onResize);
+      };
+    });
 
   return (
     <ResizablePanelGroup
@@ -60,15 +59,7 @@ export function Main() {
       {/* Left side - Image previews */}
       <ResizablePanel defaultSize={20} minSize={previewMinSize}>
         <ScrollArea>
-          <div className="space-y-2 pr-3">
-            {clips.map((clip) => (
-              <Explorer
-                key={clip.timestamp}
-                clip={clip}
-                onClick={() => clipStore.trigger.select({ clip })}
-              />
-            ))}
-          </div>
+          <div className="space-y-2 pr-3">{/* TODO: explorer */}</div>
         </ScrollArea>
       </ResizablePanel>
 
@@ -81,7 +72,7 @@ export function Main() {
       {/* Middle - Main image display */}
       <ResizablePanel>
         <div className="p-4 h-full flex items-center justify-center">
-          <ImageDisplay clip={clips.find((clip) => clip.isSelected)!} />
+          <ImageEditor image={shinoa} />
         </div>
       </ResizablePanel>
 
