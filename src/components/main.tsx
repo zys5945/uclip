@@ -24,30 +24,29 @@ export function Main() {
   const [previewMinSize, setPreviewMinSize] = useState(20);
   const [propertiesMinSize, setPropertiesMinSize] = useState(20);
 
-  const image =
-    // pseudo pixel-based min sizes
-    useEffect(() => {
-      const onResize = () => {
-        const panelGroupWidth = getPanelGroupElement(
-          "clip-manager-panel-group"
-        )?.offsetWidth;
-        const resizeHandleWidth = getResizeHandleElement(
-          "clip-manager-resize-handle-0"
-        )?.offsetWidth;
+  // pseudo pixel-based min sizes
+  useEffect(() => {
+    const onResize = () => {
+      const panelGroupWidth = getPanelGroupElement(
+        "clip-manager-panel-group"
+      )?.offsetWidth;
+      const resizeHandleWidth = getResizeHandleElement(
+        "clip-manager-resize-handle-0"
+      )?.offsetWidth;
 
-        if (!panelGroupWidth || !resizeHandleWidth) return;
+      if (!panelGroupWidth || !resizeHandleWidth) return;
 
-        const availableWidth = panelGroupWidth - 2 * resizeHandleWidth;
+      const availableWidth = panelGroupWidth - 2 * resizeHandleWidth;
 
-        setPreviewMinSize((previewMinWidthPx / availableWidth) * 100);
-        setPropertiesMinSize((propertiesMinWidthPx / availableWidth) * 100);
-      };
+      setPreviewMinSize((previewMinWidthPx / availableWidth) * 100);
+      setPropertiesMinSize((propertiesMinWidthPx / availableWidth) * 100);
+    };
 
-      window.addEventListener("resize", onResize);
-      return () => {
-        window.removeEventListener("resize", onResize);
-      };
-    });
+    window.addEventListener("resize", onResize);
+    return () => {
+      window.removeEventListener("resize", onResize);
+    };
+  });
 
   return (
     <ResizablePanelGroup
@@ -71,7 +70,7 @@ export function Main() {
 
       {/* Middle - Main image display */}
       <ResizablePanel>
-        <div className="p-4 h-full flex items-center justify-center">
+        <div className="w-full h-full">
           <ImageEditor image={shinoa} />
         </div>
       </ResizablePanel>
