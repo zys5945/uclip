@@ -1,4 +1,8 @@
-import { EditTool, EditContext } from "./edit-context";
+import { ZoomInIcon, ZoomOutIcon } from "lucide-react";
+import { useEffect, useState } from "react";
+
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { EditContext, EditTool } from "./edit-context";
 
 interface ToolData {
   dragged?: boolean;
@@ -51,4 +55,33 @@ export class ZoomTool implements EditTool {
     ctx.canvas.style.cursor =
       toolData.clickType === "out" ? "zoom-out" : "zoom-in";
   }
+}
+
+export function ZoomToolSubToolbar({ ctx }: { ctx: EditContext }) {
+  const [zoomTypeIndex, setZoomTypeIndex] = useState(0);
+
+  const changeZoomType = (index: number) => {
+    ctx.messageTool(index === 0 ? "in" : "out");
+    setZoomTypeIndex(index);
+  };
+
+  useEffect(() => {
+    changeZoomType(zoomTypeIndex);
+  }, []);
+
+  return (
+    <ToggleGroup
+      type="single"
+      className="gap-1"
+      value={zoomTypeIndex.toString()}
+      onValueChange={(value) => changeZoomType(parseInt(value))}
+    >
+      <ToggleGroupItem value="0">
+        <ZoomInIcon />
+      </ToggleGroupItem>
+      <ToggleGroupItem value="1">
+        <ZoomOutIcon />
+      </ToggleGroupItem>
+    </ToggleGroup>
+  );
 }

@@ -1,3 +1,6 @@
+import { CheckIcon, XIcon } from "lucide-react";
+
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { EditContext, EditTool } from "./edit-context";
 
 type MouseDownPosType =
@@ -13,8 +16,10 @@ type MouseDownPosType =
   | "handle-w";
 
 interface ToolData {
+  accepted?: boolean;
   originalCropBox?: { x: number; y: number; width: number; height: number };
   currentCropBox?: { x: number; y: number; width: number; height: number };
+
   mouseDownPosType?: MouseDownPosType;
   eventSubscribers?: { [key: string]: (e: any) => void };
 }
@@ -27,17 +32,19 @@ export class CropTool implements EditTool {
   }
 
   activate(editContext: EditContext, toolData: ToolData) {
-    toolData.mouseDownPosType = undefined;
-    toolData.eventSubscribers = {};
-
+    toolData.accepted = false;
     toolData.originalCropBox = { ...editContext.data.cropBox };
     toolData.currentCropBox = { ...editContext.data.cropBox };
+    console.log("activating");
     editContext.data.cropBox = {
       x: 0,
       y: 0,
       width: editContext.data.originalWidth,
       height: editContext.data.originalHeight,
     };
+
+    toolData.mouseDownPosType = undefined;
+    toolData.eventSubscribers = {};
 
     const onMouseDown = () => {
       toolData.mouseDownPosType = this.getMousePositionType(
@@ -165,14 +172,19 @@ export class CropTool implements EditTool {
     });
   }
 
-  onMessage(ctx: EditContext, toolData: any, message: string): void {
+  onMessage(ctx: EditContext, toolData: any, message?: string): void {
+    if (!message) return;
+
     if (message === "accept") {
       ctx.data.cropBox = toolData.currentCropBox;
+      toolData.accepted = true;
     }
   }
 
   deactivate(editContext: EditContext, toolData: ToolData) {
-    editContext.data.cropBox = toolData.originalCropBox!;
+    if (!toolData.accepted) {
+      editContext.data.cropBox = toolData.originalCropBox!;
+    }
 
     editContext.unsubscribe("mousedown", toolData.eventSubscribers!.mousedown);
     editContext.unsubscribe("mouseup", toolData.eventSubscribers!.mouseup);
@@ -183,20 +195,6 @@ export class CropTool implements EditTool {
     editContext.unsubscribe("mousemove", toolData.eventSubscribers!.mousemove!);
 
     editContext.canvas.style.cursor = "default";
-  }
-
-  accept(editContext: EditContext, toolData: ToolData) {
-    if (!toolData.currentCropBox) {
-      return;
-    }
-    editContext.data.cropBox = toolData.currentCropBox;
-  }
-
-  reject(editContext: EditContext, toolData: ToolData) {
-    if (!toolData.originalCropBox) {
-      return;
-    }
-    editContext.data.cropBox = toolData.originalCropBox;
   }
 
   _computeHandlePosition(x: number, y: number, width: number, height: number) {
@@ -312,4 +310,32 @@ export class CropTool implements EditTool {
       Math.min(cropBox.height, constraintHeight - cropBox.y)
     );
   }
+}
+
+interface CropToolSubToolbarProps {
+  ctx: EditContext;
+  onExit?: () => void;
+}
+
+export function CropToolSubToolbar({ ctx, onExit }: CropToolSubToolbarProps) {
+  const handleButtonClick = (value?: string | null) => {
+    if (!value) return;
+    ctx.messageTool(value);
+    onExit?.();
+  };
+
+  return (
+    <ToggleGroup
+      type="single"
+      className="gap-1"
+      onValueChange={(value) => handleButtonClick(value)}
+    >
+      <ToggleGroupItem value="accept">
+        <CheckIcon />
+      </ToggleGroupItem>
+      <ToggleGroupItem value="reject">
+        <XIcon />
+      </ToggleGroupItem>
+    </ToggleGroup>
+  );
 }
