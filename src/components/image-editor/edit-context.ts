@@ -246,10 +246,25 @@ export class EditContext {
     this.ctx.fillRect(0, 0, this.rulerSize + 1, this.rulerSize + 1);
 
     // Calculate tick spacing based on zoom
-    let tickSpacing = 50; // Base spacing in canvas coordinates
-    if (this.scale < 0.5) tickSpacing = 100;
-    else if (this.scale > 2) tickSpacing = 25;
-    else if (this.scale > 4) tickSpacing = 10;
+    let tickSpacing = 3200; // Base spacing in canvas coordinates
+    const scaleTickSpacing = [
+      [0.03125, 1600],
+      [0.0625, 800],
+      [0.125, 400],
+      [0.25, 150],
+      [0.5, 50],
+      [2, 25],
+      [4, 10],
+      [8, 5],
+      [16, 2.5],
+      [32, 1.25],
+      [64, 0.625],
+    ];
+    for (const scaleSpacing of scaleTickSpacing) {
+      if (this.scale >= scaleSpacing[0]) {
+        tickSpacing = scaleSpacing[1];
+      }
+    }
 
     // draw horizontal ruler ticks and labels
     this.ctx.fillStyle = "#ccc";
