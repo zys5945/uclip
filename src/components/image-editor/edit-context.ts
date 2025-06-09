@@ -108,9 +108,7 @@ export class EditContext {
   }
 
   setImage(image: HTMLImageElement) {
-    if (this.animationFrameId) {
-      cancelAnimationFrame(this.animationFrameId);
-    }
+    this.cancelAnimationFrame();
 
     this.invariantCanvas.width = image.width;
     this.invariantCanvas.height = image.height;
@@ -356,9 +354,7 @@ export class EditContext {
   }
 
   draw = () => {
-    if (this.animationFrameId) {
-      cancelAnimationFrame(this.animationFrameId);
-    }
+    this.cancelAnimationFrame();
 
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
@@ -401,6 +397,12 @@ export class EditContext {
 
     this.animationFrameId = requestAnimationFrame(this.draw);
   };
+
+  cancelAnimationFrame() {
+    if (this.animationFrameId) {
+      cancelAnimationFrame(this.animationFrameId);
+    }
+  }
 
   setTool(tool: EditTool) {
     this.currentTool = tool;

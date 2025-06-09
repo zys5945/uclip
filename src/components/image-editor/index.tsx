@@ -13,7 +13,9 @@ export interface ImageEditorProps {
 }
 
 export function ImageEditor({ image }: ImageEditorProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [canvasSize, setCanvasSize] = useState({ width: 800, height: 600 });
   const [toolsEnabled, setToolsEnabled] = useState([true, false, false, false]);
 
   let editContext = useMemo(() => new EditContext(), []);
@@ -36,6 +38,36 @@ export function ImageEditor({ image }: ImageEditorProps) {
 
     editContext.draw();
   };
+
+  // reload image on change
+  useEffect(() => {
+    if (image) {
+      imageElement.src = image;
+    }
+  }, [image]);
+
+  useEffect(() => {
+    if (!containerRef.current || !canvasRef.current) return;
+
+    const updateCanvasSize = () => {
+      if (!containerRef.current || !editContext.initialized) return;
+
+      const containerBounds = containerRef.current.getBoundingClientRect();
+      editContext.canvas.width = containerBounds.width;
+      editContext.canvas.height = containerBounds.height;
+
+      editContext.cancelAnimationFrame();
+      editContext.draw();
+    };
+
+    // initial update
+    updateCanvasSize();
+
+    const observer = new ResizeObserver(updateCanvasSize);
+    observer.observe(containerRef.current);
+
+    return () => observer.disconnect();
+  }, [canvasRef, containerRef]);
 
   const switchTool = (toolIndex: number, activate: boolean) => {
     const enabled = new Array(4).fill(false);
@@ -75,15 +107,9 @@ export function ImageEditor({ image }: ImageEditorProps) {
     setToolsEnabled(enabled);
   };
 
-  useEffect(() => {
-    if (image) {
-      imageElement.src = image;
-    }
-  }, [image]);
-
   return image ? (
-    <div className="w-full h-full p-8">
-      <div className="absolute top-0 w-full flex justify-center p-2 z-10">
+    <div className="w-full h-full flex flex-col space-y-0">
+      <div className="flex justify-center p-2 z-10">
         <div className="flex space-x-2 p-2 bg-stone-700 rounded-md">
           <Toggle
             pressed={toolsEnabled[0]}
@@ -111,7 +137,13 @@ export function ImageEditor({ image }: ImageEditorProps) {
           </Toggle>
         </div>
       </div>
-      <canvas ref={canvasRef} width={1920} height={1080} />
+      <div className="flex-1 w-full" ref={containerRef}>
+        <canvas
+          ref={canvasRef}
+          width={canvasSize.width}
+          height={canvasSize.height}
+        />
+      </div>
     </div>
   ) : (
     <h2 className="text-xl font-semibold">No image selected</h2>
