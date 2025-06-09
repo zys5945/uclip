@@ -114,6 +114,11 @@ export class EditContext {
     this.invariantCanvas.height = image.height;
     this.invariantCtx.drawImage(image, 0, 0);
 
+    this.translation = {
+      x: this.canvas.width / 2 - image.width / 2,
+      y: this.canvas.height / 2 - image.height / 2,
+    };
+
     return this.invariantCtx.getImageData(0, 0, image.width, image.height);
   }
 

@@ -50,14 +50,16 @@ export function ImageEditor({ image }: ImageEditorProps) {
     if (!containerRef.current || !canvasRef.current) return;
 
     const updateCanvasSize = () => {
-      if (!containerRef.current || !editContext.initialized) return;
+      if (!containerRef.current || !canvasRef.current) return;
 
       const containerBounds = containerRef.current.getBoundingClientRect();
-      editContext.canvas.width = containerBounds.width;
-      editContext.canvas.height = containerBounds.height;
+      canvasRef.current.width = containerBounds.width;
+      canvasRef.current.height = containerBounds.height;
 
-      editContext.cancelAnimationFrame();
-      editContext.draw();
+      if (editContext.initialized) {
+        editContext.cancelAnimationFrame();
+        editContext.draw();
+      }
     };
 
     // initial update
