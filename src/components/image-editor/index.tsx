@@ -63,6 +63,7 @@ export function ImageEditor({ image }: ImageEditorProps) {
     }
   }, [image]);
 
+  // update canvas size on resize
   useEffect(() => {
     if (!canvasContainerRef.current || !canvasRef.current) return;
 
@@ -196,7 +197,7 @@ export function ImageEditor({ image }: ImageEditorProps) {
     }
 
     editContext.setTool(tool);
-    setMainToolIndex(selectedToolIndex);
+    setMainToolIndex(toMainToolIndex);
 
     switchSubTool({
       argMainToolIndex: toMainToolIndex,
