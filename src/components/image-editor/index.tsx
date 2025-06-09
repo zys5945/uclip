@@ -7,6 +7,7 @@ import { CropTool, CropToolSubToolbar } from "./crop";
 import { EditContext, EditData, EditTool } from "./edit-context";
 import { PanTool } from "./pan";
 import { ZoomTool, ZoomToolSubToolbar } from "./zoom";
+import { PenTool } from "./pen";
 
 export interface ImageEditorProps {
   image?: string;
@@ -73,7 +74,7 @@ export function ImageEditor({ image }: ImageEditorProps) {
     return () => observer.disconnect();
   }, [canvasRef, canvasContainerRef]);
 
-  const switchTool = (toolName: "pan" | "zoom" | "crop") => {
+  const switchTool = (toolName: "pan" | "zoom" | "crop" | "pen") => {
     if (!editContext.initialized) return;
 
     // deactivate the current active tool. however pan tool cannot be manually deactivated
@@ -92,6 +93,9 @@ export function ImageEditor({ image }: ImageEditorProps) {
         break;
       case "crop":
         tool = new CropTool();
+        break;
+      case "pen":
+        tool = new PenTool();
         break;
     }
 
@@ -125,6 +129,9 @@ export function ImageEditor({ image }: ImageEditorProps) {
         return;
       case 3:
         switchTool("crop");
+        return;
+      case 4:
+        switchTool("pen");
         return;
     }
   };
@@ -169,7 +176,7 @@ export function ImageEditor({ image }: ImageEditorProps) {
             type="single"
             className="gap-1"
             value={currentToolName}
-            onValueChange={switchTool}
+            onValueChange={(value) => switchTool((value as any) || "pan")}
           >
             <ToggleGroupItem value="pan">
               <MoveIcon />

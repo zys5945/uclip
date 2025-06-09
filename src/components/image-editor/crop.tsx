@@ -35,7 +35,6 @@ export class CropTool implements EditTool {
     toolData.accepted = false;
     toolData.originalCropBox = { ...editContext.data.cropBox };
     toolData.currentCropBox = { ...editContext.data.cropBox };
-    console.log("activating");
     editContext.data.cropBox = {
       x: 0,
       y: 0,

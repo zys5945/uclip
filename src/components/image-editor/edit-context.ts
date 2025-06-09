@@ -351,6 +351,25 @@ export class EditContext {
     }
   }
 
+  drawStroke(stroke: DrawnStroke) {
+    if (stroke.points.length === 0) {
+      return;
+    }
+
+    this.invariantCtx.save();
+    this.invariantCtx.strokeStyle = stroke.color;
+    this.invariantCtx.lineWidth = stroke.width;
+
+    this.invariantCtx.beginPath();
+    this.invariantCtx.moveTo(stroke.points[0].x, stroke.points[0].y);
+    for (const point of stroke.points) {
+      this.invariantCtx.lineTo(point.x, point.y);
+    }
+    this.invariantCtx.stroke();
+
+    this.invariantCtx.restore();
+  }
+
   drawInvariant() {
     this.invariantCtx.clearRect(
       0,
@@ -359,6 +378,14 @@ export class EditContext {
       this.invariantCanvas.height
     );
     this.invariantCtx.putImageData(this.data.originalImageData, 0, 0);
+
+    for (const drawing of this.data.drawings) {
+      switch (drawing.type) {
+        case "stroke":
+          this.drawStroke(drawing);
+          break;
+      }
+    }
   }
 
   draw = () => {
@@ -434,6 +461,15 @@ export class EditContext {
   }
 }
 
+export interface DrawnStroke {
+  type: "stroke";
+  color: string;
+  width: number;
+  points: { x: number; y: number }[];
+}
+
+export type Drawing = DrawnStroke;
+
 /**
  * each edit context is unique to each image
  * will get persisted to disk
@@ -443,6 +479,8 @@ export class EditData {
   originalImageData!: ImageData;
   originalWidth!: number;
   originalHeight!: number;
+
+  drawings: Drawing[] = [];
 
   // relative to original image
   cropBox!: {
