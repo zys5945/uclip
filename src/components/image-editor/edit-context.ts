@@ -470,6 +470,21 @@ export interface DrawnStroke {
 
 export type Drawing = DrawnStroke;
 
+export interface SetField {
+  type: "SetField";
+  fieldName: string;
+  before: any;
+  after: any;
+}
+
+export interface PushToField {
+  type: "PushToField";
+  fieldName: string;
+  value: any;
+}
+
+export type UndoableAction = SetField | PushToField;
+
 /**
  * each edit context is unique to each image
  * will get persisted to disk
@@ -480,8 +495,6 @@ export class EditData {
   originalWidth!: number;
   originalHeight!: number;
 
-  drawings: Drawing[] = [];
-
   // relative to original image
   cropBox!: {
     x: number;
@@ -489,6 +502,11 @@ export class EditData {
     width: number;
     height: number;
   };
+
+  drawings: Drawing[] = [];
+
+  undoStack: UndoableAction[] = [];
+  redoStack: UndoableAction[] = [];
 
   init(imageData: ImageData, width: number, height: number) {
     this.originalImageData = imageData;
@@ -502,4 +520,46 @@ export class EditData {
       height,
     };
   }
+
+  applyUndoableAction(action: UndoableAction) {
+    this.redo(action);
+    this.redoStack = [];
+  }
+
+  pushToUndoStack(action: UndoableAction) {
+    this.undoStack.push(action);
+    this.redoStack = [];
+  }
+
+  undo = () => {
+    const action = this.undoStack.pop();
+    if (!action) return;
+
+    switch (action.type) {
+      case "SetField":
+        (this as any)[action.fieldName] = action.before;
+        break;
+      case "PushToField":
+        (this as any)[action.fieldName].pop();
+        break;
+    }
+
+    this.redoStack.push(action);
+  };
+
+  redo = (argAction?: UndoableAction) => {
+    const action = argAction ?? this.redoStack.pop();
+    if (!action) return;
+
+    switch (action.type) {
+      case "SetField":
+        (this as any)[action.fieldName] = action.after;
+        break;
+      case "PushToField":
+        (this as any)[action.fieldName].push(action.value);
+        break;
+    }
+
+    this.undoStack.push(action);
+  };
 }

@@ -28,8 +28,6 @@ export class PenTool implements EditTool {
         return;
       }
 
-      console.log(ctx.mousePos, ctx.lastMousePos);
-
       const stroke = ctx.data.drawings[
         ctx.data.drawings.length - 1
       ] as DrawnStroke;
@@ -37,15 +35,23 @@ export class PenTool implements EditTool {
         x: ctx.mousePos.x,
         y: ctx.mousePos.y,
       });
+    };
 
-      console.log(ctx.data.drawings);
+    const onMouseUp = () => {
+      ctx.data.pushToUndoStack({
+        type: "PushToField",
+        fieldName: "drawings",
+        value: ctx.data.drawings[ctx.data.drawings.length - 1],
+      });
     };
 
     toolData.eventSubscribers = {};
     toolData.eventSubscribers.mousedown = onMouseDown;
     toolData.eventSubscribers.mousemove = onMouseMove;
+    toolData.eventSubscribers.mouseup = onMouseUp;
     ctx.subscribe("mousedown", toolData.eventSubscribers.mousedown);
     ctx.subscribe("mousemove", toolData.eventSubscribers.mousemove);
+    ctx.subscribe("mouseup", toolData.eventSubscribers.mouseup);
   }
 
   draw(): void {}

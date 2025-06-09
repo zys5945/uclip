@@ -1,6 +1,13 @@
 import { KeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
 
-import { CropIcon, MoveIcon, PencilIcon, SearchIcon } from "lucide-react";
+import {
+  CropIcon,
+  MoveIcon,
+  PencilIcon,
+  SearchIcon,
+  UndoIcon,
+  RedoIcon,
+} from "lucide-react";
 
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { CropTool, CropToolSubToolbar } from "./crop";
@@ -74,33 +81,40 @@ export function ImageEditor({ image }: ImageEditorProps) {
     return () => observer.disconnect();
   }, [canvasRef, canvasContainerRef]);
 
-  const switchTool = (toolName: "pan" | "zoom" | "crop" | "pen") => {
+  const switchTool = (
+    toolName: "pan" | "zoom" | "crop" | "pen" | "undo" | "redo"
+  ) => {
     if (!editContext.initialized) return;
 
-    // deactivate the current active tool. however pan tool cannot be manually deactivated
-    if (toolName === currentToolName && toolName === "pan") return;
-    editContext.deactivateTool();
+    if (toolName === "undo") {
+      editContext.data.undo();
+    } else if (toolName === "redo") {
+      editContext.data.redo();
+    } else {
+      // deactivate the current active tool. however pan tool cannot be manually deactivated
+      if (toolName === currentToolName && toolName === "pan") return;
+      editContext.deactivateTool();
 
-    const nextToolName = toolName === currentToolName ? "pan" : toolName;
+      const nextToolName = toolName === currentToolName ? "pan" : toolName;
+      let tool!: EditTool;
+      switch (nextToolName) {
+        case "pan":
+          tool = new PanTool();
+          break;
+        case "zoom":
+          tool = new ZoomTool();
+          break;
+        case "crop":
+          tool = new CropTool();
+          break;
+        case "pen":
+          tool = new PenTool();
+          break;
+      }
 
-    let tool!: EditTool;
-    switch (nextToolName) {
-      case "pan":
-        tool = new PanTool();
-        break;
-      case "zoom":
-        tool = new ZoomTool();
-        break;
-      case "crop":
-        tool = new CropTool();
-        break;
-      case "pen":
-        tool = new PenTool();
-        break;
+      editContext.setTool(tool);
+      setCurrentToolName(nextToolName);
     }
-
-    editContext.setTool(tool);
-    setCurrentToolName(nextToolName);
 
     /**
      * prevents losing focus due to sub toolbar getting removed
@@ -118,21 +132,28 @@ export function ImageEditor({ image }: ImageEditorProps) {
       return;
     }
 
-    // ctrl + num to switch tool
     if (!e.ctrlKey) return;
-    switch (parseInt(e.key)) {
-      case 1:
+    switch (e.key) {
+      // ctrl + num to switch tool
+      case "1":
         switchTool("pan");
-        return;
-      case 2:
+        break;
+      case "2":
         switchTool("zoom");
-        return;
-      case 3:
+        break;
+      case "3":
         switchTool("crop");
-        return;
-      case 4:
+        break;
+      case "4":
         switchTool("pen");
-        return;
+        break;
+      case "z":
+        if (e.shiftKey) {
+          switchTool("redo");
+        } else {
+          switchTool("undo");
+        }
+        break;
     }
   };
 
@@ -189,6 +210,12 @@ export function ImageEditor({ image }: ImageEditorProps) {
             </ToggleGroupItem>
             <ToggleGroupItem value="pen">
               <PencilIcon />
+            </ToggleGroupItem>
+            <ToggleGroupItem value="undo">
+              <UndoIcon />
+            </ToggleGroupItem>
+            <ToggleGroupItem value="redo">
+              <RedoIcon />
             </ToggleGroupItem>
           </ToggleGroup>
         </div>
