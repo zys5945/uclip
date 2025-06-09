@@ -19,6 +19,7 @@ export interface EditTool {
 export class EditContext {
   initialized: boolean = false;
 
+  rulerSize: number = 30;
   canvas!: HTMLCanvasElement;
   invariantCanvas!: HTMLCanvasElement;
   ctx!: CanvasRenderingContext2D;
@@ -160,6 +161,119 @@ export class EditContext {
     return this.isPointInRect(this.mousePos, { x, y, width, height });
   };
 
+  drawRulers() {
+    // canvas coordinate range that is currently visible
+    const canvasLeft = (-this.translation.x + this.rulerSize) / this.scale;
+    const canvasTop = (-this.translation.y + this.rulerSize) / this.scale;
+    const canvasRight = (this.canvas.width - this.translation.x) / this.scale;
+    const canvasBottom = (this.canvas.height - this.translation.y) / this.scale;
+
+    this.ctx.fillStyle = "#1f1f1f";
+    this.ctx.strokeStyle = "#ccc";
+    this.ctx.lineWidth = 1;
+
+    // draw horizontal ruler (top)
+    this.ctx.fillRect(0, 0, this.canvas.width, this.rulerSize);
+    this.ctx.beginPath();
+    this.ctx.moveTo(0, this.rulerSize);
+    this.ctx.lineTo(this.canvas.width, this.rulerSize);
+    this.ctx.stroke();
+
+    // draw vertical ruler (left)
+    this.ctx.fillRect(0, 0, this.rulerSize, this.canvas.height);
+    this.ctx.beginPath();
+    this.ctx.moveTo(this.rulerSize, 0);
+    this.ctx.lineTo(this.rulerSize, this.canvas.height);
+    this.ctx.stroke();
+
+    // draw corner square
+    this.ctx.fillRect(0, 0, this.rulerSize + 1, this.rulerSize + 1);
+
+    // Calculate tick spacing based on zoom
+    let tickSpacing = 50; // Base spacing in canvas coordinates
+    if (this.scale < 0.5) tickSpacing = 100;
+    else if (this.scale > 2) tickSpacing = 25;
+    else if (this.scale > 4) tickSpacing = 10;
+
+    // draw horizontal ruler ticks and labels
+    this.ctx.fillStyle = "#ccc";
+    this.ctx.font = "10px Arial";
+    this.ctx.textAlign = "center";
+    this.ctx.textBaseline = "middle";
+
+    const startX = Math.floor(canvasLeft / tickSpacing) * tickSpacing;
+    const endX = Math.ceil(canvasRight / tickSpacing) * tickSpacing;
+
+    for (let x = startX; x <= endX; x += tickSpacing) {
+      const screenX = x * this.scale + this.translation.x;
+      if (screenX >= this.rulerSize && screenX <= this.canvas.width) {
+        // major tick
+        this.ctx.beginPath();
+        this.ctx.moveTo(screenX, this.rulerSize - 10);
+        this.ctx.lineTo(screenX, this.rulerSize);
+        this.ctx.stroke();
+
+        // label
+        this.ctx.fillText(x.toString(), screenX, this.rulerSize - 15);
+      }
+
+      // minor ticks
+      for (let i = 1; i < 5; i++) {
+        const minorX = x + (tickSpacing * i) / 5;
+        const minorScreenX = minorX * this.scale + this.translation.x;
+        if (
+          minorScreenX >= this.rulerSize &&
+          minorScreenX <= this.canvas.width
+        ) {
+          this.ctx.beginPath();
+          this.ctx.moveTo(minorScreenX, this.rulerSize - 5);
+          this.ctx.lineTo(minorScreenX, this.rulerSize);
+          this.ctx.stroke();
+        }
+      }
+    }
+
+    // Draw vertical ruler ticks and labels
+    this.ctx.textAlign = "center";
+    this.ctx.textBaseline = "middle";
+
+    const startY = Math.floor(canvasTop / tickSpacing) * tickSpacing;
+    const endY = Math.ceil(canvasBottom / tickSpacing) * tickSpacing;
+
+    for (let y = startY; y <= endY; y += tickSpacing) {
+      const screenY = y * this.scale + this.translation.y;
+      if (screenY >= this.rulerSize && screenY <= this.canvas.height) {
+        // major tick
+        this.ctx.beginPath();
+        this.ctx.moveTo(this.rulerSize - 10, screenY);
+        this.ctx.lineTo(this.rulerSize, screenY);
+        this.ctx.stroke();
+
+        // label (rotated)
+        this.ctx.save();
+        this.ctx.translate(this.rulerSize - 15, screenY);
+        this.ctx.rotate(-Math.PI / 2);
+        this.ctx.fillText(y.toString(), 0, 0);
+        this.ctx.restore();
+      }
+
+      // Minor ticks
+      for (let i = 1; i < 5; i++) {
+        const minorY = y + (tickSpacing * i) / 5;
+        const minorScreenY = minorY * this.scale + this.translation.y;
+        if (
+          minorScreenY >= this.rulerSize &&
+          minorScreenY <= this.canvas.height
+        ) {
+          this.ctx.beginPath();
+          this.ctx.moveTo(this.rulerSize - 5, minorScreenY);
+          this.ctx.lineTo(this.rulerSize, minorScreenY);
+          this.ctx.stroke();
+        }
+      }
+    }
+  }
+
   drawInvariant() {
     this.invariantCtx.clearRect(
       0,
@@ -174,8 +288,6 @@ export class EditContext {
     if (this.animationFrameId) {
       cancelAnimationFrame(this.animationFrameId);
     }
-
-    // draw rulers un-transformed
 
     this.ctx.save();
 
@@ -210,6 +322,9 @@ export class EditContext {
     );
 
     this.ctx.restore();
+
+    // draw rulers un-transformed
+    this.drawRulers();
 
     this.animationFrameId = requestAnimationFrame(this.draw);
   };
