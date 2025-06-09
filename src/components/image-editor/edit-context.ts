@@ -38,10 +38,38 @@ export class EditContext {
 
   translation: { x: number; y: number } = { x: 0, y: 0 };
   scale: number = 1;
-  invertedTransform!: DOMMatrix;
   animationFrameId?: number;
 
   listeners: { [key: string]: ((e: any) => void)[] } = {};
+
+  // cache inverted transform computation for better performance
+  _invertedTransformParams: { x: number; y: number; scale: number } = {
+    x: 0,
+    y: 0,
+    scale: 1,
+  };
+  _invertedTransform?: DOMMatrix;
+  get invertedTransform() {
+    if (
+      !this._invertedTransform ||
+      this.translation.x !== this._invertedTransformParams.x ||
+      this.translation.y !== this._invertedTransformParams.y ||
+      this.scale !== this._invertedTransformParams.scale
+    ) {
+      this.ctx.save();
+      this.ctx.translate(this.translation.x, this.translation.y);
+      this.ctx.scale(this.scale, this.scale);
+      this._invertedTransform = this.ctx.getTransform().inverse();
+      this.ctx.restore();
+
+      this._invertedTransformParams = {
+        x: this.translation.x,
+        y: this.translation.y,
+        scale: this.scale,
+      };
+    }
+    return this._invertedTransform;
+  }
 
   init(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
@@ -53,8 +81,6 @@ export class EditContext {
     }
     this.ctx = ctx;
     this.invariantCtx = invariantCtx;
-
-    this.invertedTransform = ctx.getTransform().inverse();
 
     this._attachListeners();
 
