@@ -9,6 +9,11 @@ export interface EditTool {
    */
   draw(ctx: EditContext, toolData: any): void;
 
+  /**
+   * can be called when tool is active
+   */
+  onMessage(ctx: EditContext, toolData: any, message?: string): void;
+
   deactivate(ctx: EditContext, toolData: any): void;
 }
 
@@ -413,6 +418,11 @@ export class EditContext {
     this.currentTool = tool;
     this.currentToolData = {};
     this.currentTool.activate(this, this.currentToolData);
+  }
+
+  messageTool(message?: string) {
+    if (!this.currentTool) return;
+    this.currentTool.onMessage(this, this.currentToolData, message);
   }
 
   deactivateTool() {

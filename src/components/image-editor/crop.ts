@@ -165,6 +165,8 @@ export class CropTool implements EditTool {
     });
   }
 
+  onMessage(ctx: EditContext, toolData: any, message: string): void {}
+
   deactivate(editContext: EditContext, toolData: ToolData) {
     editContext.unsubscribe("mousedown", toolData.eventSubscribers!.mousedown);
     editContext.unsubscribe("mouseup", toolData.eventSubscribers!.mouseup);

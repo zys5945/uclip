@@ -31,6 +31,8 @@ export class PanTool implements EditTool {
 
   draw(): void {}
 
+  onMessage(): void {}
+
   deactivate(ctx: EditContext, toolData: ToolData): void {
     ctx.canvas.style.cursor = "default";
     ctx.unsubscribe("mousemove", toolData.eventHandler!);
