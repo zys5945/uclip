@@ -8,7 +8,7 @@ export class PanTool implements EditTool {
   panningSpeed: number = 1;
 
   activate(ctx: EditContext, toolData: ToolData): void {
-    ctx.canvas.style.cursor = "grabbing";
+    ctx.canvas.style.cursor = "grab";
 
     /**
      * directly using pixel coords here instead of canvas coords
