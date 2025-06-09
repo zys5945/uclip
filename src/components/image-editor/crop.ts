@@ -165,9 +165,15 @@ export class CropTool implements EditTool {
     });
   }
 
-  onMessage(ctx: EditContext, toolData: any, message: string): void {}
+  onMessage(ctx: EditContext, toolData: any, message: string): void {
+    if (message === "accept") {
+      ctx.data.cropBox = toolData.currentCropBox;
+    }
+  }
 
   deactivate(editContext: EditContext, toolData: ToolData) {
+    editContext.data.cropBox = toolData.originalCropBox!;
+
     editContext.unsubscribe("mousedown", toolData.eventSubscribers!.mousedown);
     editContext.unsubscribe("mouseup", toolData.eventSubscribers!.mouseup);
     editContext.unsubscribe(

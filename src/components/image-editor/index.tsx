@@ -15,6 +15,8 @@ import {
   SearchIcon,
   ZoomInIcon,
   ZoomOutIcon,
+  XIcon,
+  CheckIcon,
 } from "lucide-react";
 
 import { CropTool } from "./crop";
@@ -87,46 +89,78 @@ export function ImageEditor({ image }: ImageEditorProps) {
   }, [canvasRef, canvasContainerRef]);
 
   /**
-   * object mapping main tool index to [subToolbar, subToolbarIndex to message]
+   * object mapping main tool index to [subToolbar,
+   * message per subtool index or function to call on switching sub tool]
    */
-  const subToolbar: {
-    [key: number]: [React.ReactNode, { [key: string]: string }];
+  const subToolConfig: {
+    [key: number]: {
+      toolbar: React.ReactNode;
+      onSubTool:
+        | { [key: string]: string }
+        | ((toSubToolIndex: number | null) => void);
+    };
   } = {
-    1: [
-      <React.Fragment>
-        <ToggleGroupItem value="0">
-          <ZoomInIcon />
-        </ToggleGroupItem>
-        <ToggleGroupItem value="1">
-          <ZoomOutIcon />
-        </ToggleGroupItem>
-      </React.Fragment>,
-      { 0: "in", 1: "out" },
-    ],
+    1: {
+      toolbar: (
+        <React.Fragment>
+          <ToggleGroupItem value="0">
+            <ZoomInIcon />
+          </ToggleGroupItem>
+          <ToggleGroupItem value="1">
+            <ZoomOutIcon />
+          </ToggleGroupItem>
+        </React.Fragment>
+      ),
+      onSubTool: { 0: "in", 1: "out" },
+    },
+    2: {
+      toolbar: (
+        <React.Fragment>
+          <ToggleGroupItem value="0">
+            <CheckIcon />
+          </ToggleGroupItem>
+          <ToggleGroupItem value="1">
+            <XIcon />
+          </ToggleGroupItem>
+        </React.Fragment>
+      ),
+      onSubTool: (toSubToolIndex: number | null) => {
+        if (toSubToolIndex === null) return;
+
+        if (toSubToolIndex === 0) {
+          editContext.messageTool("accept");
+        }
+        switchTool("0");
+      },
+    },
   };
 
   /**
-   * messages the tool using message defined in subToolbar
-   * if no definition is found in subToolbar then no message is sent
-   * if subToolbar is defined for the tool, but subToolIndex is null then empty message is sent
+   * message then set state for ui
+   *
+   * does not "deactivate" the sub tool if it's already activated
+   * will just send message again
    */
-  function messageTool({
+  function switchSubTool({
     argMainToolIndex,
-    argSubToolIndex,
+    argSubToolIndex: toSubToolIndex,
   }: {
     argMainToolIndex?: number;
-    argSubToolIndex?: number | null;
+    argSubToolIndex: number | null;
   }) {
     const toMainToolIndex = argMainToolIndex ?? mainToolIndex ?? 0;
-    const toSubToolIndex = argSubToolIndex ?? subToolIndex;
 
-    if (toSubToolIndex) {
-      const subToolbarConfig = subToolbar[toMainToolIndex];
-      if (!subToolbarConfig) return;
-      editContext.messageTool(subToolbarConfig[1][toSubToolIndex]);
-    } else {
-      editContext.messageTool();
+    const messageConfig = subToolConfig[toMainToolIndex]?.onSubTool;
+    if (messageConfig) {
+      if (typeof messageConfig === "function") {
+        messageConfig(toSubToolIndex);
+      } else {
+        const message = toSubToolIndex ? messageConfig[toSubToolIndex] : void 0;
+        editContext.messageTool(message);
+      }
     }
+
+    setSubToolIndex(toSubToolIndex);
   }
 
   const switchTool = (toolIndexStr: string) => {
@@ -138,37 +172,36 @@ export function ImageEditor({ image }: ImageEditorProps) {
 
     // deactivate the current active tool. however pan tool cannot be manually deactivated
     if (selectedToolIndex === mainToolIndex && selectedToolIndex === 0) return;
-    if (selectedToolIndex !== 0) {
-      editContext.deactivateTool();
-    }
+    editContext.deactivateTool();
 
-    const toActivate =
+    const toMainToolIndex =
       selectedToolIndex === mainToolIndex ? 0 : selectedToolIndex;
 
     let tool;
-    let subToolIndex = null;
-    switch (toActivate) {
+    let toSubToolIndex = null;
+    switch (toMainToolIndex) {
       case 0:
         tool = new PanTool();
         break;
       case 1:
         tool = new ZoomTool();
-        subToolIndex = 0;
+        toSubToolIndex = 0;
         break;
       case 2:
         tool = new CropTool();
         break;
     }
-    if (!tool) return; // TODO
+    if (!tool) {
+      throw new Error(`Tool ${toMainToolIndex} not found`);
+    }
 
     editContext.setTool(tool);
     setMainToolIndex(selectedToolIndex);
 
-    messageTool({
-      argMainToolIndex: selectedToolIndex,
-      argSubToolIndex: subToolIndex,
+    switchSubTool({
+      argMainToolIndex: toMainToolIndex,
+      argSubToolIndex: toSubToolIndex,
     });
-    setSubToolIndex(subToolIndex);
 
     /**
      * prevents losing focus due to sub toolbar getting removed
@@ -180,8 +213,9 @@ export function ImageEditor({ image }: ImageEditorProps) {
   };
 
   const handleKeyDown = (e: KeyboardEvent) => {
+    // deactivate current tool on escape
     if (e.key === "Escape") {
-      editContext.deactivateTool();
+      switchTool("0");
       return;
     }
 
@@ -222,18 +256,17 @@ export function ImageEditor({ image }: ImageEditorProps) {
         </div>
 
         {/* sub toolbar */}
-        {subToolbar[mainToolIndex ?? 0] && (
+        {subToolConfig[mainToolIndex ?? 0] && (
           <div className="flex space-x-2 p-1 bg-stone-700 rounded-md">
             <ToggleGroup
               type="single"
               className="gap-1"
               value={subToolIndex?.toString()}
-              onValueChange={(value) => {
-                messageTool({ argSubToolIndex: parseInt(value) });
-                setSubToolIndex(parseInt(value));
-              }}
+              onValueChange={(value) =>
+                switchSubTool({ argSubToolIndex: parseInt(value) })
+              }
             >
-              {subToolbar[mainToolIndex ?? 0][0]}
+              {subToolConfig[mainToolIndex ?? 0].toolbar}
             </ToggleGroup>
           </div>
         )}
