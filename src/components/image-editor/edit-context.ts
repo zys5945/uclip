@@ -30,6 +30,8 @@ export class EditContext {
   isDragging: boolean = false;
   mousePos?: { x: number; y: number };
   lastMousePos?: { x: number; y: number };
+  mousePosPx?: { x: number; y: number };
+  lastMousePosPx?: { x: number; y: number };
 
   currentTool: EditTool | null = null;
   currentToolData: any = {};
@@ -92,14 +94,18 @@ export class EditContext {
         { x: e.offsetX, y: e.offsetY },
         this.invertedTransform
       );
+      this.mousePosPx = { x: e.offsetX, y: e.offsetY };
     });
 
     this.subscribe("mousemove", (e: MouseEvent) => {
       this.lastMousePos = this.mousePos;
+      this.lastMousePosPx = this.mousePosPx;
+
       this.mousePos = this._applyTransform(
         { x: e.offsetX, y: e.offsetY },
         this.invertedTransform
       );
+      this.mousePosPx = { x: e.offsetX, y: e.offsetY };
     });
 
     this.subscribe("mouseup", () => {
@@ -108,8 +114,12 @@ export class EditContext {
 
     this.subscribe("mouseleave", () => {
       this.isDragging = false;
+
       this.mousePos = undefined;
       this.lastMousePos = undefined;
+
+      this.mousePosPx = undefined;
+      this.lastMousePosPx = undefined;
     });
   }
 
@@ -289,6 +299,8 @@ export class EditContext {
       cancelAnimationFrame(this.animationFrameId);
     }
 
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
     this.ctx.save();
 
     this.ctx.translate(this.translation.x, this.translation.y);
@@ -329,12 +341,18 @@ export class EditContext {
     this.animationFrameId = requestAnimationFrame(this.draw);
   };
 
-  activateTool() {
-    this.currentTool?.activate(this, this.currentToolData);
+  setTool(tool: EditTool) {
+    this.currentTool = tool;
+    this.currentToolData = {};
+    this.currentTool.activate(this, this.currentToolData);
   }
 
   deactivateTool() {
-    this.currentTool?.deactivate(this, this.currentToolData);
+    if (!this.currentTool) return;
+
+    this.currentTool.deactivate(this, this.currentToolData);
+    this.currentTool = null;
+    this.currentToolData = null;
   }
 }
 

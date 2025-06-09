@@ -1,18 +1,19 @@
 import { Toggle } from "@/components/ui/toggle";
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import { MoveIcon, CropIcon, PencilIcon } from "lucide-react";
+import { CropIcon, MoveIcon, PencilIcon, ZoomInIcon } from "lucide-react";
 
 import { CropTool } from "./crop";
 import { EditContext, EditData } from "./edit-context";
+import { PanTool } from "./pan";
 
 export interface ImageEditorProps {
   image?: string;
 }
 
 export function ImageEditor({ image }: ImageEditorProps) {
-  const [imageLoading, setImageLoading] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [toolsEnabled, setToolsEnabled] = useState([true, false, false, false]);
 
   let editContext = useMemo(() => new EditContext(), []);
   let editData = useMemo(() => new EditData(), [image]);
@@ -25,36 +26,83 @@ export function ImageEditor({ image }: ImageEditorProps) {
       editContext.init(canvasRef.current);
     }
     const imageData = editContext.setImage(imageElement);
+    editContext.deactivateTool();
+    editContext.setTool(new PanTool());
 
+    // TODO
     editData.init(imageData, imageElement.width, imageElement.height);
-
     editContext.data = editData;
-    editContext.currentTool = new CropTool();
-    editContext.activateTool();
 
     editContext.draw();
+  };
 
-    setImageLoading(false);
+  const switchTool = (toolIndex: number, activate: boolean) => {
+    const enabled = new Array(4).fill(false);
+
+    // deactivating pan tool is a no-op. it's only deactivated when switching to another tool
+    if (toolIndex === 0 && !activate) {
+      enabled[0] = true;
+      setToolsEnabled(enabled);
+      return;
+    }
+
+    if (activate) {
+      editContext.deactivateTool();
+
+      let tool;
+      switch (toolIndex) {
+        case 0:
+          tool = new PanTool();
+          break;
+        case 2:
+          tool = new CropTool();
+          break;
+      }
+      if (!tool) return; // TODO
+
+      editContext.setTool(tool);
+      enabled[toolIndex] = true;
+    } else {
+      editContext.deactivateTool();
+      editContext.setTool(new PanTool());
+      enabled[0] = true;
+    }
+
+    setToolsEnabled(enabled);
   };
 
   useEffect(() => {
     if (image) {
       imageElement.src = image;
-      setImageLoading(true);
     }
   }, [image]);
 
   return image ? (
     <div className="w-full h-full p-8">
       <div className="absolute top-0 w-full flex justify-center p-2 z-10">
-        <div className="flex space-x-2 p-2 bg-gray-600 rounded-md">
-          <Toggle>
+        <div className="flex space-x-2 p-2 bg-stone-700 rounded-md">
+          <Toggle
+            pressed={toolsEnabled[0]}
+            onPressedChange={(pressed) => switchTool(0, pressed)}
+          >
             <MoveIcon />
           </Toggle>
-          <Toggle>
+          <Toggle
+            pressed={toolsEnabled[1]}
+            onPressedChange={(pressed) => switchTool(1, pressed)}
+          >
+            <ZoomInIcon />
+          </Toggle>
+          <Toggle
+            pressed={toolsEnabled[2]}
+            onPressedChange={(pressed) => switchTool(2, pressed)}
+          >
             <CropIcon />
           </Toggle>
-          <Toggle>
+          <Toggle
+            pressed={toolsEnabled[3]}
+            onPressedChange={(pressed) => switchTool(3, pressed)}
+          >
             <PencilIcon />
           </Toggle>
         </div>
