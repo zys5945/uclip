@@ -37,7 +37,25 @@ export class EditContext {
   currentToolData: any = {};
 
   translation: { x: number; y: number } = { x: 0, y: 0 };
-  scale: number = 1;
+
+  scaleSensitivity: number = 0.005;
+  minLogScale: number = Math.log(0.02);
+  maxLogScale: number = Math.log(128);
+  scaleStepSize: number = 0.5;
+  _logScale: number = 0;
+  get logScale() {
+    return this._logScale;
+  }
+  set logScale(value: number) {
+    this._logScale = Math.min(
+      this.maxLogScale,
+      Math.max(this.minLogScale, value)
+    );
+  }
+  get scale() {
+    return Math.exp(this.logScale);
+  }
+
   animationFrameId?: number;
 
   listeners: { [key: string]: ((e: any) => void)[] } = {};
@@ -81,6 +99,8 @@ export class EditContext {
     }
     this.ctx = ctx;
     this.invariantCtx = invariantCtx;
+
+    this.ctx.imageSmoothingEnabled = false;
 
     this._attachListeners();
 

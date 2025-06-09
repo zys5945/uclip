@@ -13,7 +13,7 @@ export class ZoomTool implements EditTool {
       if (!ctx.isDragging || !ctx.mousePosPx || !ctx.lastMousePosPx) return;
       toolData.dragged = true;
       const deltaX = ctx.mousePosPx.x - ctx.lastMousePosPx.x;
-      ctx.scale += deltaX * 0.01;
+      ctx.logScale += deltaX * ctx.scaleSensitivity;
     };
 
     const onMouseUp = (_: MouseEvent) => {
@@ -21,7 +21,7 @@ export class ZoomTool implements EditTool {
         toolData.dragged = false;
         return;
       }
-      ctx.scale += 1;
+      ctx.logScale += ctx.scaleStepSize;
     };
 
     toolData.eventHandlers = {};
