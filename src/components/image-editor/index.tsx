@@ -1,4 +1,7 @@
+import { Toggle } from "@/components/ui/toggle";
 import { useEffect, useMemo, useRef, useState } from "react";
+
+import { MoveIcon, CropIcon, PencilIcon } from "lucide-react";
 
 import { CropTool } from "./crop";
 import { EditContext, EditData } from "./edit-context";
@@ -44,7 +47,17 @@ export function ImageEditor({ image }: ImageEditorProps) {
   return image ? (
     <div className="w-full h-full p-8">
       <div className="absolute top-0 w-full flex justify-center p-2 z-10">
-        <div className="flex space-x-2 bg-white p-2 rounded-md shadow-md"></div>
+        <div className="flex space-x-2 p-2 bg-gray-600 rounded-md">
+          <Toggle>
+            <MoveIcon />
+          </Toggle>
+          <Toggle>
+            <CropIcon />
+          </Toggle>
+          <Toggle>
+            <PencilIcon />
+          </Toggle>
+        </div>
       </div>
       <canvas ref={canvasRef} width={1920} height={1080} />
     </div>
