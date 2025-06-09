@@ -6,6 +6,7 @@ import { CropIcon, MoveIcon, PencilIcon, ZoomInIcon } from "lucide-react";
 import { CropTool } from "./crop";
 import { EditContext, EditData } from "./edit-context";
 import { PanTool } from "./pan";
+import { ZoomTool } from "./zoom";
 
 export interface ImageEditorProps {
   image?: string;
@@ -53,6 +54,9 @@ export function ImageEditor({ image }: ImageEditorProps) {
       switch (toolIndex) {
         case 0:
           tool = new PanTool();
+          break;
+        case 1:
+          tool = new ZoomTool();
           break;
         case 2:
           tool = new CropTool();
