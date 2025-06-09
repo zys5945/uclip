@@ -100,8 +100,6 @@ export class EditContext {
     this.ctx = ctx;
     this.invariantCtx = invariantCtx;
 
-    this.ctx.imageSmoothingEnabled = false;
-
     this._attachListeners();
 
     this.initialized = true;
@@ -360,6 +358,8 @@ export class EditContext {
 
   draw = () => {
     this.cancelAnimationFrame();
+
+    this.ctx.imageSmoothingEnabled = false;
 
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 

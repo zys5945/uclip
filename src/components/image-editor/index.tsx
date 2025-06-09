@@ -1,5 +1,5 @@
 import { Toggle } from "@/components/ui/toggle";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, KeyboardEvent } from "react";
 
 import { CropIcon, MoveIcon, PencilIcon, ZoomInIcon } from "lucide-react";
 
@@ -67,21 +67,18 @@ export function ImageEditor({ image }: ImageEditorProps) {
 
     const observer = new ResizeObserver(updateCanvasSize);
     observer.observe(containerRef.current);
-
     return () => observer.disconnect();
   }, [canvasRef, containerRef]);
 
-  const switchTool = (toolIndex: number, activate: boolean) => {
-    const enabled = new Array(4).fill(false);
+  const switchTool = (toolIndex: number) => {
+    if (!editContext.initialized) return;
+    if (isNaN(toolIndex)) return;
+    if (toolIndex < 0 || toolIndex >= toolsEnabled.length) return;
 
-    // deactivating pan tool is a no-op. it's only deactivated when switching to another tool
-    if (toolIndex === 0 && !activate) {
-      enabled[0] = true;
-      setToolsEnabled(enabled);
-      return;
-    }
+    const enabled = new Array(toolsEnabled.length).fill(false);
+    const activateTool = !toolsEnabled[toolIndex];
 
-    if (activate) {
+    if (activateTool) {
       editContext.deactivateTool();
 
       let tool;
@@ -96,11 +93,13 @@ export function ImageEditor({ image }: ImageEditorProps) {
           tool = new CropTool();
           break;
       }
-      if (!tool) return; // TODO
 
-      editContext.setTool(tool);
+      editContext.setTool(tool!);
       enabled[toolIndex] = true;
     } else {
+      // deactivating pan tool is a no-op. it's only deactivated when switching to another tool
+      if (toolIndex === 0) return;
+
       editContext.deactivateTool();
       editContext.setTool(new PanTool());
       enabled[0] = true;
@@ -109,31 +108,40 @@ export function ImageEditor({ image }: ImageEditorProps) {
     setToolsEnabled(enabled);
   };
 
+  const handleKeyDown = (e: KeyboardEvent) => {
+    if (!e.ctrlKey) return;
+    switchTool(parseInt(e.key) - 1);
+  };
+
   return image ? (
-    <div className="w-full h-full flex flex-col space-y-0">
+    <div
+      className="w-full h-full flex flex-col space-y-0"
+      tabIndex={1}
+      onKeyDown={handleKeyDown}
+    >
       <div className="flex justify-center p-2 z-10">
         <div className="flex space-x-2 p-2 bg-stone-700 rounded-md">
           <Toggle
             pressed={toolsEnabled[0]}
-            onPressedChange={(pressed) => switchTool(0, pressed)}
+            onPressedChange={() => switchTool(0)}
           >
             <MoveIcon />
           </Toggle>
           <Toggle
             pressed={toolsEnabled[1]}
-            onPressedChange={(pressed) => switchTool(1, pressed)}
+            onPressedChange={() => switchTool(1)}
           >
             <ZoomInIcon />
           </Toggle>
           <Toggle
             pressed={toolsEnabled[2]}
-            onPressedChange={(pressed) => switchTool(2, pressed)}
+            onPressedChange={() => switchTool(2)}
           >
             <CropIcon />
           </Toggle>
           <Toggle
             pressed={toolsEnabled[3]}
-            onPressedChange={(pressed) => switchTool(3, pressed)}
+            onPressedChange={() => switchTool(3)}
           >
             <PencilIcon />
           </Toggle>
