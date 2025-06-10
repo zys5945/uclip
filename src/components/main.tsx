@@ -18,11 +18,15 @@ import { useEffect, useState } from "react";
 import shinoa from "@/assets/shinoa.jpg";
 
 const previewMinWidthPx = 300;
-const propertiesMinWidthPx = 500;
+const previewStartSize = 20;
+
+const propertiesMinWidthPx = 300;
+const propertiesStartSize = 15;
 
 export function Main() {
-  const [previewMinSize, setPreviewMinSize] = useState(20);
-  const [propertiesMinSize, setPropertiesMinSize] = useState(20);
+  const [previewMinSize, setPreviewMinSize] = useState(previewStartSize);
+  const [propertiesMinSize, setPropertiesMinSize] =
+    useState(propertiesStartSize);
 
   // pseudo pixel-based min sizes
   useEffect(() => {
@@ -56,7 +60,7 @@ export function Main() {
       className="w-full h-full"
     >
       {/* Left side - Image previews */}
-      <ResizablePanel defaultSize={20} minSize={previewMinSize}>
+      <ResizablePanel defaultSize={previewStartSize} minSize={previewMinSize}>
         <ScrollArea>
           <div className="space-y-2 pr-3">{/* TODO: explorer */}</div>
         </ScrollArea>
@@ -81,10 +85,11 @@ export function Main() {
       />
 
       {/* Right side - Metadata */}
-      <ResizablePanel defaultSize={20} minSize={propertiesMinSize}>
-        <div className="pr-3">
-          <InfoPanel items={[]} />
-        </div>
+      <ResizablePanel
+        defaultSize={propertiesStartSize}
+        minSize={propertiesMinSize}
+      >
+        <InfoPanel />
       </ResizablePanel>
     </ResizablePanelGroup>
   );

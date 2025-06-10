@@ -1,4 +1,4 @@
-import { KeyboardEvent, useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 
 import { EditContext, EditData } from "./edit-context";
 import { Toolbar, ToolbarHandle } from "./toolbar";

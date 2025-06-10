@@ -1,29 +1,58 @@
+import convert from "color-convert";
+
+import { Card, CardTitle, CardHeader, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { Car } from "lucide-react";
 
-interface MetadataItem {
-  id: number;
-  key: string;
-  value: string;
-}
+export function InfoPanel() {
+  const mouse = { x: 300, y: 300 };
 
-interface MetadataListProps {
-  items: MetadataItem[];
-}
+  const color = [255, 255, 255, 1];
 
-export function InfoPanel({ items }: MetadataListProps) {
+  const rgb: [r: number, g: number, b: number] = [color[0], color[1], color[2]];
+  const cmyk = convert.rgb.cmyk(rgb);
+  const hsl = convert.rgb.hsl(rgb);
+
   return (
-    <div className="space-y-2">
-      {items.map((item, index) => (
-        <div key={item.id}>
-          <div className="flex justify-between py-1">
-            <span className="font-medium text-muted-foreground">
-              {item.key}
-            </span>
-            <span className="text-right">{item.value}</span>
+    <div className="w-full h-full flex flex-col gap-2 p-2 justify-center">
+      <Card>
+        <CardHeader>
+          <CardTitle>Position</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col gap-2">
+            <div className="flex justify-between">
+              <span>X</span>
+              <span>{mouse.x}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Y</span>
+              <span>{mouse.y}</span>
+            </div>
           </div>
-          {index < items.length - 1 && <Separator />}
-        </div>
-      ))}
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>Color</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col gap-2">
+            <div className="flex justify-between">
+              <span>RGBA</span>
+              <span>{color.join(", ")}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>CMYK</span>
+              <span>{cmyk.join(", ")}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>HSL</span>
+              <span>{hsl.join(", ")}</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
