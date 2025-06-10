@@ -15,10 +15,10 @@ import { PanTool } from "./pan";
 import { PenTool } from "./pen";
 import { ZoomTool, ZoomToolSubToolbar } from "./zoom";
 
-type ToolName = "pan" | "zoom" | "crop" | "pen" | "undo" | "redo";
+export type ToolName = "pan" | "zoom" | "crop" | "pen" | "undo" | "redo";
 
 export interface ToolbarHandle {
-  setTool: (toolName: ToolName) => void;
+  useTool: (toolName: ToolName) => void;
 }
 
 export function Toolbar({
@@ -32,7 +32,7 @@ export function Toolbar({
     void 0
   );
 
-  const setTool = (toolName: ToolName) => {
+  const useTool = (toolName: ToolName) => {
     if (!ctx.initialized) return;
 
     if (toolName === "undo") {
@@ -74,14 +74,14 @@ export function Toolbar({
     ref,
     () => {
       return {
-        setTool,
+        useTool,
       };
     },
     []
   );
 
   useEffect(() => {
-    setTool("pan");
+    useTool("pan");
   }, []);
 
   const renderSubToolbar = () => {
@@ -93,7 +93,7 @@ export function Toolbar({
         break;
       case "crop":
         subToolbar = (
-          <CropToolSubToolbar ctx={ctx} onExit={() => setTool("pan")} />
+          <CropToolSubToolbar ctx={ctx} onExit={() => useTool("pan")} />
         );
         break;
     }
@@ -115,7 +115,7 @@ export function Toolbar({
           type="single"
           className="gap-1"
           value={currentToolName}
-          onValueChange={(value) => setTool((value as any) || "pan")}
+          onValueChange={(value) => useTool((value as any) || "pan")}
         >
           <ToggleGroupItem value="pan">
             <MoveIcon />

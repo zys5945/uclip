@@ -11,7 +11,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ImageEditor } from "./image-editor";
 import { Explorer } from "./explorer";
-import { InfoPanel } from "./info-panel";
+import { InfoPanel, InfoPanelProps } from "./info-panel";
 
 import { useEffect, useState } from "react";
 
@@ -27,6 +27,9 @@ export function Main() {
   const [previewMinSize, setPreviewMinSize] = useState(previewStartSize);
   const [propertiesMinSize, setPropertiesMinSize] =
     useState(propertiesStartSize);
+  const [infoPanelInput, setInfoPanelInput] = useState<
+    InfoPanelProps | undefined
+  >(void 0);
 
   // pseudo pixel-based min sizes
   useEffect(() => {
@@ -52,6 +55,13 @@ export function Main() {
     };
   });
 
+  const canvasInfoChangeCallback = (
+    mousePos: { x: number; y: number },
+    color: Uint8ClampedArray
+  ) => {
+    setInfoPanelInput({ mousePos, color });
+  };
+
   return (
     <ResizablePanelGroup
       id="clip-manager-panel-group"
@@ -75,7 +85,10 @@ export function Main() {
       {/* Middle - Main image display */}
       <ResizablePanel>
         <div className="w-full h-full">
-          <ImageEditor image={shinoa} />
+          <ImageEditor
+            image={shinoa}
+            canvasInfoChangeCallback={canvasInfoChangeCallback}
+          />
         </div>
       </ResizablePanel>
 
@@ -89,7 +102,10 @@ export function Main() {
         defaultSize={propertiesStartSize}
         minSize={propertiesMinSize}
       >
-        <InfoPanel />
+        <InfoPanel
+          mousePos={infoPanelInput?.mousePos}
+          color={infoPanelInput?.color}
+        />
       </ResizablePanel>
     </ResizablePanelGroup>
   );

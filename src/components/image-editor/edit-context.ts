@@ -41,6 +41,8 @@ export class EditContext {
   currentTool: EditTool | null = null;
   currentToolData: any = {};
 
+  animationFrameId?: number;
+
   translation: { x: number; y: number } = { x: 0, y: 0 };
 
   scaleSensitivity: number = 0.005;
@@ -60,10 +62,6 @@ export class EditContext {
   get scale() {
     return Math.exp(this.logScale);
   }
-
-  animationFrameId?: number;
-
-  listeners: { [key: string]: ((e: any) => void)[] } = {};
 
   // cache inverted transform computation for better performance
   _invertedTransformParams: { x: number; y: number; scale: number } = {
@@ -93,6 +91,8 @@ export class EditContext {
     }
     return this._invertedTransform;
   }
+
+  listeners: { [key: string]: ((e: any) => void)[] } = {};
 
   init(canvas: HTMLCanvasElement) {
     this.canvas = canvas;

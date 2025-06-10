@@ -1,13 +1,26 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useImperativeHandle, useMemo, useRef } from "react";
 
 import { EditContext, EditData } from "./edit-context";
-import { Toolbar, ToolbarHandle } from "./toolbar";
+import { Toolbar, ToolbarHandle, ToolName } from "./toolbar";
+
+export interface ImageEditorHandle {
+  useTool: (toolName: ToolName) => void;
+}
 
 export interface ImageEditorProps {
   image?: string;
+  ref: React.Ref<ImageEditorHandle>;
+  canvasInfoChangeCallback?: (
+    mousePos: { x: number; y: number },
+    color: Uint8ClampedArray
+  ) => void;
 }
 
-export function ImageEditor({ image }: ImageEditorProps) {
+export function ImageEditor({
+  image,
+  ref,
+  canvasInfoChangeCallback,
+}: ImageEditorProps) {
   const toolbarRef = useRef<ToolbarHandle>(null);
   const canvasContainerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -21,9 +34,25 @@ export function ImageEditor({ image }: ImageEditorProps) {
 
     if (!editContext.initialized) {
       editContext.init(canvasRef.current);
+      editContext.subscribe("mousemove", () => {
+        if (
+          !canvasInfoChangeCallback ||
+          !editContext.mousePos ||
+          !editContext.mousePosPx
+        )
+          return;
+
+        const color = editContext.ctx.getImageData(
+          editContext.mousePosPx.x,
+          editContext.mousePosPx.y,
+          1,
+          1
+        ).data;
+        canvasInfoChangeCallback(editContext.mousePos, color);
+      });
     }
     if (toolbarRef.current) {
-      toolbarRef.current.setTool("pan");
+      toolbarRef.current.useTool("pan");
     }
 
     // TODO
@@ -66,6 +95,20 @@ export function ImageEditor({ image }: ImageEditorProps) {
     observer.observe(canvasContainerRef.current);
     return () => observer.disconnect();
   }, [canvasRef, canvasContainerRef]);
+
+  useImperativeHandle(
+    ref,
+    () => {
+      return {
+        useTool: (toolName: ToolName) => {
+          if (toolbarRef.current) {
+            toolbarRef.current.useTool(toolName);
+          }
+        },
+      };
+    },
+    [toolbarRef]
+  );
 
   // const handleKeyDown = (e: KeyboardEvent) => {
   //   // deactivate current tool on escape
