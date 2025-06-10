@@ -1,4 +1,5 @@
-import { EditTool, EditContext, DrawnStroke } from "./edit-context";
+import { DrawnStroke } from "../edit-data";
+import { EditContext, EditTool } from "./edit-context";
 
 interface ToolData {
   strokeColor: string;

@@ -1,6 +1,7 @@
 import { useEffect, useImperativeHandle, useMemo, useRef } from "react";
 
-import { EditContext, EditData } from "./edit-context";
+import { EditData } from "../edit-data";
+import { EditContext } from "./edit-context";
 import { Toolbar, ToolbarHandle, ToolName } from "./toolbar";
 
 export interface ImageEditorHandle {
