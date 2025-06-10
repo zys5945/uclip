@@ -1,6 +1,5 @@
 import { useEffect, useImperativeHandle, useMemo, useRef } from "react";
 
-import { EditData } from "../edit-data";
 import { EditContext } from "./edit-context";
 import { Toolbar, ToolbarHandle, ToolName } from "./toolbar";
 
@@ -27,10 +26,9 @@ export function ImageEditor({
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   let editContext = useMemo(() => new EditContext(), []);
-  let editData = useMemo(() => new EditData(), [image]);
 
-  const imageElement = useMemo(() => new Image(), []);
-  imageElement.onload = () => {
+  // EditContext initialization
+  useEffect(() => {
     if (!canvasRef.current) return;
 
     if (!editContext.initialized) {
@@ -52,24 +50,15 @@ export function ImageEditor({
         canvasInfoChangeCallback(editContext.mousePos, color);
       });
     }
+
     if (toolbarRef.current) {
       toolbarRef.current.useTool("pan");
     }
 
-    // TODO
-    const imageData = editContext.setImage(imageElement);
-    editData.init(imageData, imageElement.width, imageElement.height);
-    editContext.data = editData;
-
-    editContext.draw();
-  };
-
-  // reload image on change
-  useEffect(() => {
-    if (image) {
-      imageElement.src = image;
+    if (editContext.data) {
+      editContext.draw();
     }
-  }, [image]);
+  }, [toolbarRef, canvasRef]);
 
   // update canvas size on resize
   useEffect(() => {
@@ -97,6 +86,7 @@ export function ImageEditor({
     return () => observer.disconnect();
   }, [canvasRef, canvasContainerRef]);
 
+  // expose toolbar
   useImperativeHandle(
     ref,
     () => {

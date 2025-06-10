@@ -33,7 +33,10 @@ export function Toolbar({
   );
 
   const useTool = (toolName: ToolName) => {
-    if (!ctx.initialized) return;
+    if (!ctx.initialized || !ctx.data) {
+      setCurrentToolName(void 0);
+      return;
+    }
 
     if (toolName === "undo") {
       ctx.data.undo();
@@ -79,10 +82,6 @@ export function Toolbar({
     },
     []
   );
-
-  useEffect(() => {
-    useTool("pan");
-  }, []);
 
   const renderSubToolbar = () => {
     let subToolbar;

@@ -332,7 +332,7 @@ export function CropToolSubToolbar({ ctx, onExit }: CropToolSubToolbarProps) {
     <ToggleGroup
       type="single"
       className="gap-1"
-      onValueChange={(value) => handleButtonClick(value)}
+      onValueChange={(value: string) => handleButtonClick(value)}
     >
       <ToggleGroupItem value="accept">
         <CheckIcon />

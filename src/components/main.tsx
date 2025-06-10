@@ -9,14 +9,14 @@ import {
   getResizeHandleElement,
 } from "react-resizable-panels";
 
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { ImageEditor, ImageEditorHandle } from "./image-editor";
-import { InfoPanel, InfoPanelProps } from "./info-panel";
+import { ImageExplorer } from "./image-explorer";
 
 import shinoa from "@/assets/shinoa.jpg";
+import { InfoPanel, InfoPanelHandle } from "./info-panel";
 
-const previewMinWidthPx = 300;
-const previewStartSize = 20;
+const previewMinWidthPx = 200;
+const previewStartSize = 15;
 
 const propertiesMinWidthPx = 300;
 const propertiesStartSize = 15;
@@ -27,9 +27,7 @@ export function Main() {
     useState(propertiesStartSize);
 
   const imageEditorRef = useRef<ImageEditorHandle | null>(null);
-  const [infoPanelInput, setInfoPanelInput] = useState<
-    InfoPanelProps | undefined
-  >(void 0);
+  const infoPanelRef = useRef<InfoPanelHandle | null>(null);
 
   // pseudo pixel-based min sizes
   useEffect(() => {
@@ -53,15 +51,9 @@ export function Main() {
     return () => {
       window.removeEventListener("resize", onResize);
     };
-  });
+  }, []);
 
-  const canvasInfoChangeCallback = (
-    mousePos: { x: number; y: number },
-    color: Uint8ClampedArray
-  ) => {
-    setInfoPanelInput({ mousePos, color });
-  };
-
+  // keyboard shortcuts
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (!imageEditorRef.current) return;
@@ -100,7 +92,18 @@ export function Main() {
     return () => {
       document.removeEventListener("keydown", onKeyDown);
     };
-  });
+  }, []);
+
+  const canvasInfoChangeCallback = (
+    mousePos: { x: number; y: number },
+    color: Uint8ClampedArray
+  ) => {
+    if (!infoPanelRef.current) return;
+    infoPanelRef.current.setData({
+      mousePos,
+      color,
+    });
+  };
 
   return (
     <ResizablePanelGroup
@@ -111,9 +114,7 @@ export function Main() {
     >
       {/* Left side - Image previews */}
       <ResizablePanel defaultSize={previewStartSize} minSize={previewMinSize}>
-        <ScrollArea>
-          <div className="space-y-2 pr-3">{/* TODO: explorer */}</div>
-        </ScrollArea>
+        <ImageExplorer />
       </ResizablePanel>
 
       <ResizableHandle
@@ -143,10 +144,7 @@ export function Main() {
         defaultSize={propertiesStartSize}
         minSize={propertiesMinSize}
       >
-        <InfoPanel
-          mousePos={infoPanelInput?.mousePos}
-          color={infoPanelInput?.color}
-        />
+        <InfoPanel ref={infoPanelRef} />
       </ResizablePanel>
     </ResizablePanelGroup>
   );

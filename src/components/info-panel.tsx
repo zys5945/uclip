@@ -3,18 +3,35 @@ import convert from "color-convert";
 import { Card, CardTitle, CardHeader, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Car } from "lucide-react";
+import { useImperativeHandle, useState } from "react";
 
-export interface InfoPanelProps {
+interface InfoPanelData {
   mousePos?: { x: number; y: number };
   color?: Uint8ClampedArray;
 }
 
-export function InfoPanel({ mousePos, color }: InfoPanelProps) {
+export interface InfoPanelHandle {
+  setData(data: InfoPanelData): void;
+}
+
+export function InfoPanel({ ref }: React.Ref<InfoPanelHandle>) {
   const sections: JSX.Element[] = [];
+
+  const [mousePos, setMousePos] = useState<
+    { x: number; y: number } | undefined
+  >(void 0);
+  const [color, setColor] = useState<Uint8ClampedArray | undefined>(void 0);
+
+  useImperativeHandle(ref, () => ({
+    setData(data: InfoPanelData) {
+      setMousePos(data.mousePos);
+      setColor(data.color);
+    },
+  }));
 
   if (mousePos) {
     sections.push(
-      <Card>
+      <Card key="mosePos">
         <CardHeader>
           <CardTitle>Position</CardTitle>
         </CardHeader>
@@ -44,7 +61,7 @@ export function InfoPanel({ mousePos, color }: InfoPanelProps) {
     const hsl = convert.rgb.hsl(rgb);
 
     sections.push(
-      <Card>
+      <Card key="color">
         <CardHeader>
           <CardTitle>
             <div className="flex flex-row justify-between items-center">

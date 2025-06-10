@@ -1,3 +1,5 @@
+import { createStore } from "@xstate/store";
+
 export interface DrawnStroke {
   type: "stroke";
   color: string;
@@ -28,12 +30,16 @@ export type UndoableAction = SetField | PushToField;
  * similar to .psd files from photoshop
  */
 export class EditData {
-  originalImageData!: ImageData;
-  originalWidth!: number;
-  originalHeight!: number;
+  filepath: string;
+  directory: string[];
+  filename: string;
+
+  originalImageData: ImageData;
+  originalWidth: number;
+  originalHeight: number;
 
   // relative to original image
-  cropBox!: {
+  cropBox: {
     x: number;
     y: number;
     width: number;
@@ -45,7 +51,17 @@ export class EditData {
   undoStack: UndoableAction[] = [];
   redoStack: UndoableAction[] = [];
 
-  init(imageData: ImageData, width: number, height: number) {
+  constructor(
+    filepath: string,
+    imageData: ImageData,
+    width: number,
+    height: number
+  ) {
+    this.filepath = filepath;
+    const pathParts = filepath.split("/");
+    this.directory = pathParts.slice(0, -1);
+    this.filename = pathParts[pathParts.length - 1];
+
     this.originalImageData = imageData;
     this.originalWidth = width;
     this.originalHeight = height;
@@ -100,3 +116,29 @@ export class EditData {
     this.undoStack.push(action);
   };
 }
+
+export const editDataStore = createStore({
+  context: {
+    editDatas: [] as EditData[],
+    dirtyEditDatas: [] as EditData[],
+    currentEditData: null as EditData | null,
+  },
+  on: {
+    add: (context, event: { data: EditData }, enq) => {
+      for (const data of context.editDatas) {
+        if (data.filepath === event.data.filepath) {
+          return context;
+        }
+      }
+
+      enq.emit.added({ data: event.data });
+      return {
+        ...context,
+        editDatas: [...context.editDatas, event.data],
+      };
+    },
+  },
+  emits: {
+    added: (_payload: { data: EditData }) => {},
+  },
+});

@@ -32,7 +32,7 @@ export class EditContext {
   ctx!: CanvasRenderingContext2D;
   invariantCtx!: CanvasRenderingContext2D;
 
-  data!: EditData;
+  data: EditData | null = null;
 
   isDragging: boolean = false;
   mousePos?: { x: number; y: number };
@@ -379,9 +379,9 @@ export class EditContext {
       this.invariantCanvas.width,
       this.invariantCanvas.height
     );
-    this.invariantCtx.putImageData(this.data.originalImageData, 0, 0);
+    this.invariantCtx.putImageData(this.data!.originalImageData, 0, 0);
 
-    for (const drawing of this.data.drawings) {
+    for (const drawing of this.data!.drawings) {
       switch (drawing.type) {
         case "stroke":
           this.drawStroke(drawing);
@@ -391,6 +391,8 @@ export class EditContext {
   }
 
   draw = () => {
+    if (!this.data) return;
+
     this.cancelAnimationFrame();
 
     this.ctx.imageSmoothingEnabled = false;

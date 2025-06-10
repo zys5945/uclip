@@ -3,6 +3,8 @@ import { useSelector } from "@xstate/store/react";
 import React from "react";
 import { ChevronRight, ChevronDown, Folder, FolderOpen } from "lucide-react";
 
+import { EditData, editDataStore } from "../edit-data";
+
 class FileSystemNode {
   name: string;
   path: string[];
@@ -68,10 +70,14 @@ class FileSystemNode {
 
 const imageUIStore = createStore({
   context: {
-    root: null as FileSystemNode | null,
+    root: new FileSystemNode("root", [], -1, false),
     selectedNode: null as FileSystemNode | null,
   },
   on: {
+    add: (context, event: { data: EditData }) => {
+      context.root.addFile(event.data.directory, event.data.filename);
+    },
+
     setRoot: (context, event?: { root: FileSystemNode }) => ({
       root: event?.root ?? context.root,
       selectedNode: context.selectedNode,
@@ -82,6 +88,10 @@ const imageUIStore = createStore({
       selectedNode: event.node,
     }),
   },
+});
+
+editDataStore.on("added", (event: { data: EditData }) => {
+  imageUIStore.trigger.add({ data: event.data });
 });
 
 const TreeNode = ({
@@ -159,23 +169,18 @@ const TreeNode = ({
   );
 };
 
-export const DirectoryTreeSidebar = ({ data = sampleData }) => {
-  const context = useSelector(imageUIStore, (state) => state.context);
+export const DirectoryTreeSidebar = () => {
+  const uiContext = useSelector(imageUIStore, (state) => state.context);
 
-  console.log("re-render");
-
-  // TODO
-  if (!context.root) {
-    const tree = buildFileSystemTree(data);
-    imageUIStore.trigger.setRoot({ root: tree });
+  if (!uiContext.root) {
     return null;
   }
 
   return (
     <div className="w-full h-full flex flex-col p-2 select-none">
       <TreeNode
-        node={context.root}
-        selectedNode={context.selectedNode}
+        node={uiContext.root}
+        selectedNode={uiContext.selectedNode}
         showSelf={false}
       />
     </div>
