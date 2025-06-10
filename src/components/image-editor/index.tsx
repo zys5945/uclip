@@ -110,38 +110,6 @@ export function ImageEditor({
     [toolbarRef]
   );
 
-  // const handleKeyDown = (e: KeyboardEvent) => {
-  //   // deactivate current tool on escape
-  //   if (e.key === "Escape") {
-  //     switchTool("pan");
-  //     return;
-  //   }
-
-  //   if (!e.ctrlKey) return;
-  //   switch (e.key) {
-  //     // ctrl + num to switch tool
-  //     case "1":
-  //       switchTool("pan");
-  //       break;
-  //     case "2":
-  //       switchTool("zoom");
-  //       break;
-  //     case "3":
-  //       switchTool("crop");
-  //       break;
-  //     case "4":
-  //       switchTool("pen");
-  //       break;
-  //     case "z":
-  //       if (e.shiftKey) {
-  //         switchTool("redo");
-  //       } else {
-  //         switchTool("undo");
-  //       }
-  //       break;
-  //   }
-  // };
-
   return image ? (
     <div className="w-full h-full flex flex-col space-y-0">
       <Toolbar ctx={editContext} ref={toolbarRef} />

@@ -3,17 +3,15 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
+import { useEffect, useRef, useState } from "react";
 import {
   getPanelGroupElement,
   getResizeHandleElement,
 } from "react-resizable-panels";
 
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ImageEditor } from "./image-editor";
-import { Explorer } from "./explorer";
+import { ImageEditor, ImageEditorHandle } from "./image-editor";
 import { InfoPanel, InfoPanelProps } from "./info-panel";
-
-import { useEffect, useState } from "react";
 
 import shinoa from "@/assets/shinoa.jpg";
 
@@ -27,6 +25,8 @@ export function Main() {
   const [previewMinSize, setPreviewMinSize] = useState(previewStartSize);
   const [propertiesMinSize, setPropertiesMinSize] =
     useState(propertiesStartSize);
+
+  const imageEditorRef = useRef<ImageEditorHandle | null>(null);
   const [infoPanelInput, setInfoPanelInput] = useState<
     InfoPanelProps | undefined
   >(void 0);
@@ -62,6 +62,46 @@ export function Main() {
     setInfoPanelInput({ mousePos, color });
   };
 
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (!imageEditorRef.current) return;
+      const useTool = imageEditorRef.current.useTool;
+
+      // deactivate current tool on escape
+      if (e.key === "Escape") {
+        useTool("pan");
+        return;
+      }
+      if (!e.ctrlKey) return;
+      switch (e.key) {
+        // ctrl + num to switch tool
+        case "1":
+          useTool("pan");
+          break;
+        case "2":
+          useTool("zoom");
+          break;
+        case "3":
+          useTool("crop");
+          break;
+        case "4":
+          useTool("pen");
+          break;
+        case "z":
+          if (e.shiftKey) {
+            useTool("redo");
+          } else {
+            useTool("undo");
+          }
+          break;
+      }
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  });
+
   return (
     <ResizablePanelGroup
       id="clip-manager-panel-group"
@@ -87,6 +127,7 @@ export function Main() {
         <div className="w-full h-full">
           <ImageEditor
             image={shinoa}
+            ref={imageEditorRef}
             canvasInfoChangeCallback={canvasInfoChangeCallback}
           />
         </div>
