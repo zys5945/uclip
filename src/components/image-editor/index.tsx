@@ -8,7 +8,6 @@ export interface ImageEditorHandle {
 }
 
 export interface ImageEditorProps {
-  image?: string;
   ref: React.Ref<ImageEditorHandle>;
   canvasInfoChangeCallback?: (
     mousePos: { x: number; y: number },
@@ -17,7 +16,6 @@ export interface ImageEditorProps {
 }
 
 export function ImageEditor({
-  image,
   ref,
   canvasInfoChangeCallback,
 }: ImageEditorProps) {
@@ -99,7 +97,7 @@ export function ImageEditor({
     [toolbarRef]
   );
 
-  return image ? (
+  return true ? (
     <div className="w-full h-full flex flex-col space-y-0">
       <Toolbar ctx={editContext} ref={toolbarRef} />
 

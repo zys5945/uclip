@@ -38,8 +38,8 @@ export class CropTool implements EditTool {
     editContext.data!.cropBox = {
       x: 0,
       y: 0,
-      width: editContext.data!.originalWidth,
-      height: editContext.data!.originalHeight,
+      width: editContext.data!.originalImageData.width,
+      height: editContext.data!.originalImageData.height,
     };
 
     toolData.mouseDownPosType = undefined;
@@ -123,8 +123,8 @@ export class CropTool implements EditTool {
 
       this.constrainCropBox(
         newCropBox,
-        editContext.data!.originalWidth,
-        editContext.data!.originalHeight
+        editContext.data!.originalImageData.width,
+        editContext.data!.originalImageData.height
       );
 
       toolData.currentCropBox = newCropBox;

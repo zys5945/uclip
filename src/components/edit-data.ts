@@ -35,8 +35,6 @@ export class EditData {
   filename: string;
 
   originalImageData: ImageData;
-  originalWidth: number;
-  originalHeight: number;
 
   // relative to original image
   cropBox: {
@@ -51,26 +49,19 @@ export class EditData {
   undoStack: UndoableAction[] = [];
   redoStack: UndoableAction[] = [];
 
-  constructor(
-    filepath: string,
-    imageData: ImageData,
-    width: number,
-    height: number
-  ) {
+  constructor(filepath: string, imageData: ImageData) {
     this.filepath = filepath;
     const pathParts = filepath.split("/");
     this.directory = pathParts.slice(0, -1);
     this.filename = pathParts[pathParts.length - 1];
 
     this.originalImageData = imageData;
-    this.originalWidth = width;
-    this.originalHeight = height;
 
     this.cropBox = {
       x: 0,
       y: 0,
-      width,
-      height,
+      width: imageData.width,
+      height: imageData.height,
     };
   }
 

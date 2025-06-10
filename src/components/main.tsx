@@ -11,8 +11,6 @@ import {
 
 import { ImageEditor, ImageEditorHandle } from "./image-editor";
 import { ImageExplorer } from "./image-explorer";
-
-import shinoa from "@/assets/shinoa.jpg";
 import { InfoPanel, InfoPanelHandle } from "./info-panel";
 
 const previewMinWidthPx = 200;
@@ -127,7 +125,6 @@ export function Main() {
       <ResizablePanel>
         <div className="w-full h-full">
           <ImageEditor
-            image={shinoa}
             ref={imageEditorRef}
             canvasInfoChangeCallback={canvasInfoChangeCallback}
           />
