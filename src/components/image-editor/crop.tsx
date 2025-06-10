@@ -33,13 +33,13 @@ export class CropTool implements EditTool {
 
   activate(editContext: EditContext, toolData: ToolData) {
     toolData.accepted = false;
-    toolData.originalCropBox = { ...editContext.data.cropBox };
-    toolData.currentCropBox = { ...editContext.data.cropBox };
-    editContext.data.cropBox = {
+    toolData.originalCropBox = { ...editContext.data!.cropBox };
+    toolData.currentCropBox = { ...editContext.data!.cropBox };
+    editContext.data!.cropBox = {
       x: 0,
       y: 0,
-      width: editContext.data.originalWidth,
-      height: editContext.data.originalHeight,
+      width: editContext.data!.originalWidth,
+      height: editContext.data!.originalHeight,
     };
 
     toolData.mouseDownPosType = undefined;
@@ -123,8 +123,8 @@ export class CropTool implements EditTool {
 
       this.constrainCropBox(
         newCropBox,
-        editContext.data.originalWidth,
-        editContext.data.originalHeight
+        editContext.data!.originalWidth,
+        editContext.data!.originalHeight
       );
 
       toolData.currentCropBox = newCropBox;
@@ -175,7 +175,7 @@ export class CropTool implements EditTool {
     if (!message) return;
 
     if (message === "accept") {
-      ctx.data.applyUndoableAction({
+      ctx.data!.applyUndoableAction({
         type: "SetField",
         fieldName: "cropBox",
         before: toolData.originalCropBox,
@@ -187,7 +187,7 @@ export class CropTool implements EditTool {
 
   deactivate(editContext: EditContext, toolData: ToolData) {
     if (!toolData.accepted) {
-      editContext.data.cropBox = toolData.originalCropBox!;
+      editContext.data!.cropBox = toolData.originalCropBox!;
     }
 
     editContext.unsubscribe("mousedown", toolData.eventSubscribers!.mousedown);

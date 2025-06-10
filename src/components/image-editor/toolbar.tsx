@@ -6,7 +6,7 @@ import {
   SearchIcon,
   UndoIcon,
 } from "lucide-react";
-import { useState, useImperativeHandle, useEffect } from "react";
+import { useState, useImperativeHandle } from "react";
 
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { CropTool, CropToolSubToolbar } from "./crop";

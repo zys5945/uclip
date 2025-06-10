@@ -21,7 +21,7 @@ export class PenTool implements EditTool {
         points: [],
       };
 
-      ctx.data.drawings.push(stroke);
+      ctx.data!.drawings.push(stroke);
     };
 
     const onMouseMove = () => {
@@ -29,8 +29,8 @@ export class PenTool implements EditTool {
         return;
       }
 
-      const stroke = ctx.data.drawings[
-        ctx.data.drawings.length - 1
+      const stroke = ctx.data!.drawings[
+        ctx.data!.drawings.length - 1
       ] as DrawnStroke;
       stroke.points.push({
         x: ctx.mousePos.x,
@@ -39,10 +39,10 @@ export class PenTool implements EditTool {
     };
 
     const onMouseUp = () => {
-      ctx.data.pushToUndoStack({
+      ctx.data!.pushToUndoStack({
         type: "PushToField",
         fieldName: "drawings",
-        value: ctx.data.drawings[ctx.data.drawings.length - 1],
+        value: ctx.data!.drawings[ctx.data!.drawings.length - 1],
       });
     };
 

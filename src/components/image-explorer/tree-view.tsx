@@ -104,7 +104,6 @@ const TreeNode = ({
   showSelf?: boolean;
 }) => {
   const onClick = () => {
-    console.log("click", node);
     if (!node.isFile) {
       node.isExpanded = !node.isExpanded;
     }

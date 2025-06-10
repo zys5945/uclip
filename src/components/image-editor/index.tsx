@@ -89,15 +89,13 @@ export function ImageEditor({
   // expose toolbar
   useImperativeHandle(
     ref,
-    () => {
-      return {
-        useTool: (toolName: ToolName) => {
-          if (toolbarRef.current) {
-            toolbarRef.current.useTool(toolName);
-          }
-        },
-      };
-    },
+    () => ({
+      useTool: (toolName: ToolName) => {
+        if (toolbarRef.current) {
+          toolbarRef.current.useTool(toolName);
+        }
+      },
+    }),
     [toolbarRef]
   );
 

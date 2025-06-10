@@ -1,9 +1,7 @@
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import convert from "color-convert";
 
-import { Card, CardTitle, CardHeader, CardContent } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { Car } from "lucide-react";
-import { useImperativeHandle, useState } from "react";
+import React, { useImperativeHandle, useState } from "react";
 
 interface InfoPanelData {
   mousePos?: { x: number; y: number };
@@ -14,8 +12,12 @@ export interface InfoPanelHandle {
   setData(data: InfoPanelData): void;
 }
 
-export function InfoPanel({ ref }: React.Ref<InfoPanelHandle>) {
-  const sections: JSX.Element[] = [];
+interface InfoPanelProps {
+  ref: React.Ref<InfoPanelHandle>;
+}
+
+export function InfoPanel({ ref }: InfoPanelProps) {
+  const sections: React.JSX.Element[] = [];
 
   const [mousePos, setMousePos] = useState<
     { x: number; y: number } | undefined
