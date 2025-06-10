@@ -4,7 +4,7 @@ import React from "react";
 import { editDataStore } from "../edit-data";
 import { DragDropReceiver } from "./drag-drop-receiver";
 import { InputPrompt } from "./input-prompt";
-import { DirectoryTreeSidebar } from "./tree-view";
+import { DirectoryTree } from "./tree-view";
 
 export function ImageExplorer() {
   const editDatas = useSelector(
@@ -15,7 +15,7 @@ export function ImageExplorer() {
   return (
     <React.Fragment>
       <DragDropReceiver />
-      {editDatas.length === 0 ? <InputPrompt /> : <DirectoryTreeSidebar />}
+      {editDatas.length === 0 ? <InputPrompt /> : <DirectoryTree />}
     </React.Fragment>
   );
 }

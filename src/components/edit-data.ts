@@ -1,3 +1,4 @@
+import { sep } from "@tauri-apps/api/path";
 import { createStore } from "@xstate/store";
 
 export interface DrawnStroke {
@@ -51,7 +52,7 @@ export class EditData {
 
   constructor(filepath: string, imageData: ImageData) {
     this.filepath = filepath;
-    const pathParts = filepath.split("/");
+    const pathParts = filepath.split(sep());
     this.directory = pathParts.slice(0, -1);
     this.filename = pathParts[pathParts.length - 1];
 

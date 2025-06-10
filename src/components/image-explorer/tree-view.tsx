@@ -7,29 +7,30 @@ import { EditData, editDataStore } from "../edit-data";
 
 class FileSystemNode {
   name: string;
-  path: string[];
   depth: number;
   isFile: boolean;
   isExpanded?: boolean; // undefined for files
   children?: FileSystemNode[]; // undefined for files, array for folders
 
-  constructor(name: string, path: string[], depth: number, isFile: boolean) {
+  constructor(
+    name: string,
+    depth: number,
+    isFile: boolean,
+    isExpanded = false
+  ) {
     this.name = name;
-    this.path = path;
     this.depth = depth;
     this.isFile = isFile;
 
     if (!isFile) {
-      this.isExpanded = false;
+      this.isExpanded = isExpanded;
       this.children = [];
     }
   }
 
   addFile(path: string[], fileName: string): void {
     const parent = this.getOrCreateFolder(path);
-    parent.children!.push(
-      new FileSystemNode(fileName, path, parent.depth + 1, true)
-    );
+    parent.children!.push(new FileSystemNode(fileName, parent.depth + 1, true));
   }
 
   addFolder(path: string[]): void {
@@ -45,7 +46,7 @@ class FileSystemNode {
       );
 
       if (!folder) {
-        folder = new FileSystemNode(folderName, path, current.depth + 1, false);
+        folder = new FileSystemNode(folderName, current.depth + 1, false);
         current.children!.push(folder);
       }
 
@@ -70,18 +71,13 @@ class FileSystemNode {
 
 const imageUIStore = createStore({
   context: {
-    root: new FileSystemNode("root", [], -1, false),
+    root: new FileSystemNode("root", -1, false, true),
     selectedNode: null as FileSystemNode | null,
   },
   on: {
     add: (context, event: { data: EditData }) => {
       context.root.addFile(event.data.directory, event.data.filename);
     },
-
-    setRoot: (context, event?: { root: FileSystemNode }) => ({
-      root: event?.root ?? context.root,
-      selectedNode: context.selectedNode,
-    }),
 
     setSelectedNode: (context, event: { node: FileSystemNode | null }) => ({
       root: context.root,
@@ -103,14 +99,14 @@ const TreeNode = ({
   selectedNode: FileSystemNode | null;
   showSelf?: boolean;
 }) => {
+  const isSelected = node === selectedNode;
+
   const onClick = () => {
     if (!node.isFile) {
       node.isExpanded = !node.isExpanded;
     }
     imageUIStore.trigger.setSelectedNode({ node });
   };
-
-  const isSelected = node === selectedNode;
 
   const selfMarkup = (
     <div
@@ -147,7 +143,7 @@ const TreeNode = ({
   );
 
   const childrenMarkup = node.children &&
-    node.children.length &&
+    node.children.length !== 0 &&
     node.isExpanded && (
       <React.Fragment>
         {node.children!.map((child: FileSystemNode, index) => (
@@ -163,12 +159,12 @@ const TreeNode = ({
   return (
     <div>
       {showSelf && selfMarkup}
-      {childrenMarkup}
+      {childrenMarkup && childrenMarkup}
     </div>
   );
 };
 
-export const DirectoryTreeSidebar = () => {
+export const DirectoryTree = () => {
   const uiContext = useSelector(imageUIStore, (state) => state.context);
 
   if (!uiContext.root) {
