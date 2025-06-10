@@ -2,81 +2,142 @@ import { createStore } from "@xstate/store";
 import { useSelector } from "@xstate/store/react";
 import React from "react";
 import { ChevronRight, ChevronDown, Folder, FolderOpen } from "lucide-react";
+import { sep } from "@tauri-apps/api/path";
 
 import { EditData, editDataStore } from "../edit-data";
+import { cn } from "@/lib/utils";
+
+const pathSep = sep();
+
+const makeKey = (() => {
+  let count = 0;
+  return () => {
+    count++;
+    return count;
+  };
+})();
 
 class FileSystemNode {
-  name: string;
+  key: number;
   depth: number;
-  isFile: boolean;
-  isExpanded?: boolean; // undefined for files
-  children?: FileSystemNode[]; // undefined for files, array for folders
 
-  constructor(
-    name: string,
-    depth: number,
-    isFile: boolean,
-    isExpanded = false
-  ) {
-    this.name = name;
+  constructor(depth: number) {
+    this.key = makeKey();
     this.depth = depth;
-    this.isFile = isFile;
+  }
+}
 
-    if (!isFile) {
-      this.isExpanded = isExpanded;
-      this.children = [];
+class DirectoryNode extends FileSystemNode {
+  directory: string[];
+  isExpanded: boolean;
+  children: FileSystemNode[];
+
+  constructor(depth: number, directory: string[], isExpanded = false) {
+    super(depth);
+    this.directory = directory;
+    this.isExpanded = isExpanded;
+    this.children = [];
+  }
+
+  addFile(directory: string[], name: string, editData: EditData) {
+    const node = this.getOrCreateOwningDirectory(directory);
+    node.children.push(new FileNode(node.depth + 1, name, editData));
+  }
+
+  addDirectory(directory: string[]) {
+    this.getOrCreateOwningDirectory(directory);
+  }
+
+  private getOrCreateOwningDirectory(directory: string[]): DirectoryNode {
+    if (directory.length === 0) {
+      return this;
     }
-  }
 
-  addFile(path: string[], fileName: string): void {
-    const parent = this.getOrCreateFolder(path);
-    parent.children!.push(new FileSystemNode(fileName, parent.depth + 1, true));
-  }
+    let overlap = -1;
+    for (let i = 0; i < directory.length; i++) {
+      if (i >= this.directory.length || this.directory[i] !== directory[i]) {
+        break;
+      }
+      overlap = i;
+    }
 
-  addFolder(path: string[]): void {
-    this.getOrCreateFolder(path);
-  }
+    // no overlap at all, new child
+    if (overlap === -1) {
+      const newChild = new DirectoryNode(this.depth + 1, directory);
+      this.children.push(newChild);
+      return newChild;
+    }
 
-  private getOrCreateFolder(path: string[]): FileSystemNode {
-    let current: FileSystemNode = this;
-
-    for (const folderName of path) {
-      let folder = current.children!.find(
-        (child) => child.name === folderName && !child.isFile
-      );
-
-      if (!folder) {
-        folder = new FileSystemNode(folderName, current.depth + 1, false);
-        current.children!.push(folder);
+    // self directory exact match, either self or one of the children
+    if (overlap === this.directory.length - 1) {
+      // perfect match
+      if (overlap === directory.length - 1) {
+        return this;
       }
 
-      current = folder;
+      // otherwise check children
+      directory = directory.slice(overlap + 1);
+
+      let firstPathName = directory[0];
+      const child: DirectoryNode = this.children.find(
+        (child) =>
+          child instanceof DirectoryNode && child.directory[0] === firstPathName
+      ) as DirectoryNode;
+
+      // found child: recurse, otherwise create new
+      if (child) {
+        return child.getOrCreateOwningDirectory(directory);
+      } else {
+        const newChild = new DirectoryNode(this.depth + 1, directory);
+        this.children.push(newChild);
+        return newChild;
+      }
     }
 
-    return current;
+    // matching ended partially, need to split self
+    const newDirectory = this.directory.slice(0, overlap + 1);
+    const oldChildrenNewDirectory = this.directory.slice(overlap + 1);
+    const newChildDirectory = directory.slice(overlap + 1);
+
+    const oldChildren = this.children;
+    const oldChildrenParent = new DirectoryNode(
+      this.depth + 1,
+      oldChildrenNewDirectory
+    );
+    oldChildrenParent.children = oldChildren;
+
+    const newChild = new DirectoryNode(this.depth + 1, newChildDirectory);
+
+    this.directory = newDirectory;
+    this.children = [oldChildrenParent, newChild];
+
+    return newChild;
   }
+}
 
-  find(path: string[]): FileSystemNode | null {
-    let current: FileSystemNode = this;
+class FileNode extends FileSystemNode {
+  name: string;
+  editData: EditData;
 
-    for (const name of path) {
-      const child = current.children?.find((child) => child.name === name);
-      if (!child) return null;
-      current = child;
-    }
-
-    return current;
+  constructor(depth: number, name: string, editData: EditData) {
+    super(depth);
+    this.name = name;
+    this.editData = editData;
   }
 }
 
 const imageUIStore = createStore({
   context: {
-    root: new FileSystemNode("root", -1, false, true),
+    root: new DirectoryNode(-1, [], true),
     selectedNode: null as FileSystemNode | null,
   },
   on: {
     add: (context, event: { data: EditData }) => {
-      context.root.addFile(event.data.directory, event.data.filename);
+      context.root.addFile(
+        event.data.directory,
+        event.data.filename,
+        event.data
+      );
     },
 
     setSelectedNode: (context, event: { node: FileSystemNode | null }) => ({
@@ -99,67 +160,78 @@ const TreeNode = ({
   selectedNode: FileSystemNode | null;
   showSelf?: boolean;
 }) => {
-  const isSelected = node === selectedNode;
+  const isSelected = selectedNode === node;
 
   const onClick = () => {
-    if (!node.isFile) {
+    if (node instanceof DirectoryNode) {
       node.isExpanded = !node.isExpanded;
     }
+    if (node instanceof FileNode) {
+      editDataStore.trigger.setCurrentEditData({
+        data: node.editData,
+      });
+    }
+
     imageUIStore.trigger.setSelectedNode({ node });
   };
 
-  const selfMarkup = (
-    <div
-      className={`transition-colors duration-150 cursor-pointer hover:bg-gray-800 py-2 ${
-        isSelected && "bg-gray-600"
-      }`}
-      onClick={onClick}
-    >
-      {!node.isFile ? (
-        <div
-          className="flex items-center space-x-2"
-          style={{ paddingLeft: `${node.depth * 16 + 8}px` }}
-        >
-          {node.isExpanded ? (
-            <React.Fragment>
-              <ChevronDown className="w-3 h-3 text-gray-100" />
-              <FolderOpen className="w-4 h-4 text-blue-400" />
-            </React.Fragment>
-          ) : (
-            <React.Fragment>
-              <ChevronRight className="w-3 h-3 text-gray-100" />
-              <Folder className="w-4 h-4 text-blue-400" />
-            </React.Fragment>
-          )}
-          <span className="text-md truncate">{node.name}</span>
-        </div>
-      ) : (
-        <div className="py-2 px-2 flex flex-col items-center space-y-1 mb-3">
-          <span className="text-sm">{node.name}</span>
-          <canvas width="200" height="100" className="border max-h-48" />
-        </div>
-      )}
-    </div>
-  );
+  let selfMarkup;
 
-  const childrenMarkup = node.children &&
+  if (node instanceof DirectoryNode) {
+    selfMarkup = (
+      <div
+        className="flex items-center space-x-2"
+        style={{ paddingLeft: `${node.depth * 16 + 8}px` }}
+      >
+        {node.isExpanded ? (
+          <React.Fragment>
+            <ChevronDown className="w-3 h-3 text-gray-100" />
+            <FolderOpen className="w-4 h-4 text-blue-400" />
+          </React.Fragment>
+        ) : (
+          <React.Fragment>
+            <ChevronRight className="w-3 h-3 text-gray-100" />
+            <Folder className="w-4 h-4 text-blue-400" />
+          </React.Fragment>
+        )}
+        <span className="text-md truncate">{node.directory.join(pathSep)}</span>
+      </div>
+    );
+  }
+  if (node instanceof FileNode) {
+    selfMarkup = (
+      <div className="py-2 px-2 flex flex-col items-center space-y-1 mb-3">
+        <span className="text-sm">{node.name}</span>
+        <canvas width="200" height="100" className="border max-h-48" />
+      </div>
+    );
+  }
+
+  const childrenMarkup = node instanceof DirectoryNode &&
+    node.children &&
     node.children.length !== 0 &&
     node.isExpanded && (
       <React.Fragment>
-        {node.children!.map((child: FileSystemNode, index) => (
-          <TreeNode
-            key={child.name || `${child.name}-${index}`}
-            node={child}
-            selectedNode={selectedNode}
-          />
+        {node.children!.map((child) => (
+          <TreeNode key={child.key} node={child} selectedNode={selectedNode} />
         ))}
       </React.Fragment>
     );
 
   return (
     <div>
-      {showSelf && selfMarkup}
-      {childrenMarkup && childrenMarkup}
+      {showSelf && selfMarkup && (
+        <div
+          className={cn(
+            "cursor-pointer hover:bg-gray-800 py-2",
+            isSelected && "bg-gray-600"
+          )}
+          onClick={onClick}
+        >
+          {selfMarkup}
+        </div>
+      )}
+      {childrenMarkup}
     </div>
   );
 };
@@ -172,7 +244,7 @@ export const DirectoryTree = () => {
   }
 
   return (
-    <div className="w-full h-full flex flex-col p-2 select-none">
+    <div className="w-full h-full flex flex-col p-2 select-none transition-colors duration-150">
       <TreeNode
         node={uiContext.root}
         selectedNode={uiContext.selectedNode}

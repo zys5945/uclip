@@ -129,6 +129,11 @@ export const editDataStore = createStore({
         editDatas: [...context.editDatas, event.data],
       };
     },
+
+    setCurrentEditData: (context, event: { data: EditData }) => ({
+      ...context,
+      currentEditData: event.data,
+    }),
   },
   emits: {
     added: (_payload: { data: EditData }) => {},
