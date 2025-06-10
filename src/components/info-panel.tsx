@@ -78,7 +78,7 @@ export function InfoPanel({ mousePos, color }: InfoPanelProps) {
 
   return (
     <div className="w-full h-full flex flex-col gap-2 p-2 justify-center">
-      {...sections}
+      {sections}
     </div>
   );
 }
