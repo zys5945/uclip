@@ -28,13 +28,11 @@ export function Toolbar({
   ctx: EditContext;
   ref: React.Ref<ToolbarHandle>;
 }) {
-  const [currentToolName, setCurrentToolName] = useState<string | undefined>(
-    void 0
-  );
+  const [currentToolName, setCurrentToolName] = useState<string>("null");
 
   const useTool = (toolName: ToolName) => {
     if (!ctx.initialized || !ctx.data) {
-      setCurrentToolName(void 0);
+      setCurrentToolName("null");
       return;
     }
 
