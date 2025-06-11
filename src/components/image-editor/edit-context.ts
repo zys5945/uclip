@@ -1,4 +1,4 @@
-import { DrawnStroke, EditData } from "../edit-data";
+import { EditData } from "../edit-data";
 
 export interface EditTool {
   /**
@@ -112,19 +112,23 @@ export class EditContext {
     this.initialized = true;
   }
 
-  setImage(image: HTMLImageElement) {
+  setData(data?: EditData | null) {
+    if (!data) return;
     this.cancelAnimationFrame();
 
-    this.invariantCanvas.width = image.width;
-    this.invariantCanvas.height = image.height;
-    this.invariantCtx.drawImage(image, 0, 0);
+    this.data = data;
+
+    const { width, height } = data.originalImageData;
+
+    this.invariantCanvas.width = width;
+    this.invariantCanvas.height = height;
 
     this.translation = {
-      x: this.canvas.width / 2 - image.width / 2,
-      y: this.canvas.height / 2 - image.height / 2,
+      x: this.canvas.width / 2 - width / 2,
+      y: this.canvas.height / 2 - height / 2,
     };
 
-    return this.invariantCtx.getImageData(0, 0, image.width, image.height);
+    console.log(this.canvas.width, this.canvas.height, this.translation);
   }
 
   _onEvent = (e: any) => {

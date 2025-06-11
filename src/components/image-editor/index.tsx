@@ -1,5 +1,7 @@
+import { useSelector } from "@xstate/store/react";
 import { useEffect, useImperativeHandle, useMemo, useRef } from "react";
 
+import { editDataStore } from "../edit-data";
 import { EditContext } from "./edit-context";
 import { Toolbar, ToolbarHandle, ToolName } from "./toolbar";
 
@@ -19,35 +21,52 @@ export function ImageEditor({
   ref,
   canvasInfoChangeCallback,
 }: ImageEditorProps) {
+  const currentEditData = useSelector(
+    editDataStore,
+    (state) => state.context.currentEditData
+  );
+
   const toolbarRef = useRef<ToolbarHandle>(null);
   const canvasContainerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   let editContext = useMemo(() => new EditContext(), []);
 
-  // EditContext initialization
-  useEffect(() => {
+  const initializeContext = () => {
     if (!canvasRef.current) return;
 
-    if (!editContext.initialized) {
-      editContext.init(canvasRef.current);
-      editContext.subscribe("mousemove", () => {
-        if (
-          !canvasInfoChangeCallback ||
-          !editContext.mousePos ||
-          !editContext.mousePosPx
-        )
-          return;
-
-        const color = editContext.ctx.getImageData(
-          editContext.mousePosPx.x,
-          editContext.mousePosPx.y,
-          1,
-          1
-        ).data;
-        canvasInfoChangeCallback(editContext.mousePos, color);
-      });
+    if (editContext.initialized) {
+      return;
     }
+
+    editContext.init(canvasRef.current);
+    updateCanvasSize();
+
+    editContext.subscribe("mousemove", () => {
+      if (
+        !canvasInfoChangeCallback ||
+        !editContext.mousePos ||
+        !editContext.mousePosPx
+      )
+        return;
+
+      const color = editContext.ctx.getImageData(
+        editContext.mousePosPx.x,
+        editContext.mousePosPx.y,
+        1,
+        1
+      ).data;
+      canvasInfoChangeCallback(editContext.mousePos, color);
+    });
+  };
+
+  // set EditData
+  useEffect(() => {
+    if (!editContext.initialized) {
+      initializeContext();
+    }
+
+    editContext.setData(currentEditData);
 
     if (toolbarRef.current) {
       toolbarRef.current.useTool("pan");
@@ -56,33 +75,28 @@ export function ImageEditor({
     if (editContext.data) {
       editContext.draw();
     }
-  }, [toolbarRef, canvasRef]);
+  }, [currentEditData]);
+
+  function updateCanvasSize() {
+    if (!canvasContainerRef.current || !canvasRef.current) return;
+
+    const containerBounds = canvasContainerRef.current.getBoundingClientRect();
+    canvasRef.current.width = containerBounds.width;
+    canvasRef.current.height = containerBounds.height;
+
+    if (editContext.initialized) {
+      editContext.cancelAnimationFrame();
+      editContext.draw();
+    }
+  }
 
   // update canvas size on resize
   useEffect(() => {
     if (!canvasContainerRef.current || !canvasRef.current) return;
-
-    const updateCanvasSize = () => {
-      if (!canvasContainerRef.current || !canvasRef.current) return;
-
-      const containerBounds =
-        canvasContainerRef.current.getBoundingClientRect();
-      canvasRef.current.width = containerBounds.width;
-      canvasRef.current.height = containerBounds.height;
-
-      if (editContext.initialized) {
-        editContext.cancelAnimationFrame();
-        editContext.draw();
-      }
-    };
-
-    // initial update
-    updateCanvasSize();
-
     const observer = new ResizeObserver(updateCanvasSize);
     observer.observe(canvasContainerRef.current);
     return () => observer.disconnect();
-  }, [canvasRef, canvasContainerRef]);
+  }, [currentEditData]);
 
   // expose toolbar
   useImperativeHandle(
@@ -97,7 +111,7 @@ export function ImageEditor({
     [toolbarRef]
   );
 
-  return true ? (
+  return currentEditData ? (
     <div className="w-full h-full flex flex-col space-y-0">
       <Toolbar ctx={editContext} ref={toolbarRef} />
 
@@ -106,6 +120,8 @@ export function ImageEditor({
       </div>
     </div>
   ) : (
-    <h2 className="text-xl font-semibold">No image selected</h2>
+    <div className="w-full h-full flex justify-center items-center select-none">
+      <h2 className="text-xl font-semibold">No image selected</h2>
+    </div>
   );
 }

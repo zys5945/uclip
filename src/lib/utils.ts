@@ -36,6 +36,8 @@ export async function convertBinaryToImageData(
   });
   const bitmap = await createImageBitmap(blob);
 
+  _canvas.width = bitmap.width;
+  _canvas.height = bitmap.height;
   _ctx!.drawImage(bitmap, 0, 0);
 
   return _ctx!.getImageData(0, 0, bitmap.width, bitmap.height);
