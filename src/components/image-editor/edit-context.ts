@@ -127,8 +127,6 @@ export class EditContext {
       x: this.canvas.width / 2 - width / 2,
       y: this.canvas.height / 2 - height / 2,
     };
-
-    console.log(this.canvas.width, this.canvas.height, this.translation);
   }
 
   _onEvent = (e: any) => {

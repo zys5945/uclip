@@ -61,57 +61,54 @@ class DirectoryNode extends FileSystemNode {
       overlap = i;
     }
 
-    // no overlap at all, new child
-    if (overlap === -1) {
+    // note it's not possible to have no match at all, except when this is the root node
+    // in which case we still consider that a "full match"
+
+    // matched partially, need to split
+    if (overlap >= 0 && overlap < this.directory.length - 1) {
+      const newDirectory = this.directory.slice(0, overlap + 1);
+      const oldChildrenNewDirectory = this.directory.slice(overlap + 1);
+      const newChildDirectory = directory.slice(overlap + 1);
+
+      const oldChildren = this.children;
+      const oldChildrenParent = new DirectoryNode(
+        this.depth + 1,
+        oldChildrenNewDirectory
+      );
+      oldChildrenParent.children = oldChildren;
+
+      const newChild = new DirectoryNode(this.depth + 1, newChildDirectory);
+
+      this.directory = newDirectory;
+      this.children = [oldChildrenParent, newChild];
+
+      return newChild;
+    }
+
+    // self directory fully consumed
+
+    // perfect match
+    if (overlap === directory.length - 1) {
+      return this;
+    }
+
+    // otherwise check children
+    directory = directory.slice(overlap + 1);
+
+    let firstPathName = directory[0];
+    const child: DirectoryNode = this.children.find(
+      (child) =>
+        child instanceof DirectoryNode && child.directory[0] === firstPathName
+    ) as DirectoryNode;
+
+    // found child: recurse, otherwise create new
+    if (child) {
+      return child.getOrCreateOwningDirectory(directory);
+    } else {
       const newChild = new DirectoryNode(this.depth + 1, directory);
       this.children.push(newChild);
       return newChild;
     }
-
-    // self directory exact match, either self or one of the children
-    if (overlap === this.directory.length - 1) {
-      // perfect match
-      if (overlap === directory.length - 1) {
-        return this;
-      }
-
-      // otherwise check children
-      directory = directory.slice(overlap + 1);
-
-      let firstPathName = directory[0];
-      const child: DirectoryNode = this.children.find(
-        (child) =>
-          child instanceof DirectoryNode && child.directory[0] === firstPathName
-      ) as DirectoryNode;
-
-      // found child: recurse, otherwise create new
-      if (child) {
-        return child.getOrCreateOwningDirectory(directory);
-      } else {
-        const newChild = new DirectoryNode(this.depth + 1, directory);
-        this.children.push(newChild);
-        return newChild;
-      }
-    }
-
-    // matching ended partially, need to split self
-    const newDirectory = this.directory.slice(0, overlap + 1);
-    const oldChildrenNewDirectory = this.directory.slice(overlap + 1);
-    const newChildDirectory = directory.slice(overlap + 1);
-
-    const oldChildren = this.children;
-    const oldChildrenParent = new DirectoryNode(
-      this.depth + 1,
-      oldChildrenNewDirectory
-    );
-    oldChildrenParent.children = oldChildren;
-
-    const newChild = new DirectoryNode(this.depth + 1, newChildDirectory);
-
-    this.directory = newDirectory;
-    this.children = [oldChildrenParent, newChild];
-
-    return newChild;
   }
 }
 

@@ -1,9 +1,7 @@
 import { listen } from "@tauri-apps/api/event";
-import { readFile } from "@tauri-apps/plugin-fs";
 import { useEffect, useState } from "react";
 
-import { cn, convertBinaryToImageData } from "@/lib/utils";
-import { EditData, editDataStore } from "../edit-data";
+import { cn, readFileIntoStore } from "@/lib/utils";
 
 export function DragDropReceiver() {
   const [dragActive, setDragActive] = useState(false);
@@ -12,14 +10,8 @@ export function DragDropReceiver() {
   useEffect(() => {
     const unlistenDrag = listen("tauri://drag-drop", (event: any) => {
       setDragActive(false);
-
-      const paths: string[] = event.payload.paths;
-
-      for (const path of paths) {
-        readFile(path).then(async (binary: Uint8Array) => {
-          const imageData = await convertBinaryToImageData(path, binary);
-          editDataStore.trigger.add({ data: new EditData(path, imageData) });
-        });
+      for (const path of event.payload.paths) {
+        readFileIntoStore(path);
       }
     });
 
