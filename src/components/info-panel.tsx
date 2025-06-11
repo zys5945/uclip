@@ -1,35 +1,15 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import convert from "color-convert";
+import React from "react";
+import { useSelector } from "@xstate/store/react";
 
-import React, { useImperativeHandle, useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { canvasInfoStore } from "./image-editor/canvas-info";
 
-interface InfoPanelData {
-  mousePos?: { x: number; y: number };
-  color?: Uint8ClampedArray;
-}
-
-export interface InfoPanelHandle {
-  setData(data: InfoPanelData): void;
-}
-
-interface InfoPanelProps {
-  ref: React.Ref<InfoPanelHandle>;
-}
-
-export function InfoPanel({ ref }: InfoPanelProps) {
+export function InfoPanel() {
   const sections: React.JSX.Element[] = [];
 
-  const [mousePos, setMousePos] = useState<
-    { x: number; y: number } | undefined
-  >(void 0);
-  const [color, setColor] = useState<Uint8ClampedArray | undefined>(void 0);
-
-  useImperativeHandle(ref, () => ({
-    setData(data: InfoPanelData) {
-      setMousePos(data.mousePos);
-      setColor(data.color);
-    },
-  }));
+  const canvasInfo = useSelector(canvasInfoStore, (state) => state.context);
+  const { mousePos, color } = canvasInfo;
 
   if (mousePos) {
     sections.push(

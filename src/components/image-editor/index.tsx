@@ -4,6 +4,7 @@ import { useEffect, useImperativeHandle, useMemo, useRef } from "react";
 import { editDataStore } from "../edit-data";
 import { EditContext } from "./edit-context";
 import { Toolbar, ToolbarHandle, ToolName } from "./toolbar";
+import { canvasInfoStore } from "./canvas-info";
 
 export interface ImageEditorHandle {
   useTool: (toolName: ToolName) => void;
@@ -17,10 +18,7 @@ export interface ImageEditorProps {
   ) => void;
 }
 
-export function ImageEditor({
-  ref,
-  canvasInfoChangeCallback,
-}: ImageEditorProps) {
+export function ImageEditor({ ref }: ImageEditorProps) {
   const currentEditData = useSelector(
     editDataStore,
     (state) => state.context.currentEditData
@@ -44,7 +42,7 @@ export function ImageEditor({
 
     editContext.subscribe("mousemove", () => {
       if (
-        !canvasInfoChangeCallback ||
+        !editContext.initialized ||
         !editContext.mousePos ||
         !editContext.mousePosPx
       )
@@ -56,7 +54,11 @@ export function ImageEditor({
         1,
         1
       ).data;
-      canvasInfoChangeCallback(editContext.mousePos, color);
+
+      canvasInfoStore.trigger.set({
+        mousePos: editContext.mousePos,
+        color,
+      });
     });
   };
 

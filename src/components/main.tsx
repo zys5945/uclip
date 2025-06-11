@@ -11,7 +11,7 @@ import {
 
 import { ImageEditor, ImageEditorHandle } from "./image-editor";
 import { ImageExplorer } from "./image-explorer";
-import { InfoPanel, InfoPanelHandle } from "./info-panel";
+import { InfoPanel } from "./info-panel";
 
 const previewMinWidthPx = 200;
 const previewStartSize = 15;
@@ -25,7 +25,6 @@ export function Main() {
     useState(propertiesStartSize);
 
   const imageEditorRef = useRef<ImageEditorHandle | null>(null);
-  const infoPanelRef = useRef<InfoPanelHandle | null>(null);
 
   // pseudo pixel-based min sizes
   useEffect(() => {
@@ -92,17 +91,6 @@ export function Main() {
     };
   }, []);
 
-  const canvasInfoChangeCallback = (
-    mousePos: { x: number; y: number },
-    color: Uint8ClampedArray
-  ) => {
-    if (!infoPanelRef.current) return;
-    infoPanelRef.current.setData({
-      mousePos,
-      color,
-    });
-  };
-
   return (
     <ResizablePanelGroup
       id="clip-manager-panel-group"
@@ -124,10 +112,7 @@ export function Main() {
       {/* Middle - Main image display */}
       <ResizablePanel>
         <div className="w-full h-full">
-          <ImageEditor
-            ref={imageEditorRef}
-            canvasInfoChangeCallback={canvasInfoChangeCallback}
-          />
+          <ImageEditor ref={imageEditorRef} />
         </div>
       </ResizablePanel>
 
@@ -141,7 +126,7 @@ export function Main() {
         defaultSize={propertiesStartSize}
         minSize={propertiesMinSize}
       >
-        <InfoPanel ref={infoPanelRef} />
+        <InfoPanel />
       </ResizablePanel>
     </ResizablePanelGroup>
   );
