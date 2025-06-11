@@ -9,6 +9,7 @@
     "core:window:allow-start-dragging",
     "opener:default",
     "fs:default",
+    "fs:read-all",
     "dialog:default"
   ]
 }

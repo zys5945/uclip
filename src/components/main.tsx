@@ -12,6 +12,7 @@ import {
 import { ImageEditor, ImageEditorHandle } from "./image-editor";
 import { ImageExplorer } from "./image-explorer";
 import { InfoPanel } from "./info-panel";
+import { canvasInfoStore } from "./image-editor/canvas-info";
 
 const previewMinWidthPx = 200;
 const previewStartSize = 15;
@@ -75,6 +76,16 @@ export function Main() {
           break;
         case "4":
           useTool("pen");
+          break;
+        case "c":
+          const canvasInfo = canvasInfoStore.getSnapshot().context;
+          navigator.clipboard.writeText(
+            `((${canvasInfo.mousePos.x.toFixed(
+              0
+            )}, ${canvasInfo.mousePos.y.toFixed(0)}), (${
+              canvasInfo.color[0]
+            }, ${canvasInfo.color[1]}, ${canvasInfo.color[2]}))`
+          );
           break;
         case "z":
           if (e.shiftKey) {
