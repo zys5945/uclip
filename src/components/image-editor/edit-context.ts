@@ -353,43 +353,6 @@ export class EditContext {
     }
   }
 
-  drawStroke(stroke: DrawnStroke) {
-    if (stroke.points.length === 0) {
-      return;
-    }
-
-    this.invariantCtx.save();
-    this.invariantCtx.strokeStyle = stroke.color;
-    this.invariantCtx.lineWidth = stroke.width;
-
-    this.invariantCtx.beginPath();
-    this.invariantCtx.moveTo(stroke.points[0].x, stroke.points[0].y);
-    for (const point of stroke.points) {
-      this.invariantCtx.lineTo(point.x, point.y);
-    }
-    this.invariantCtx.stroke();
-
-    this.invariantCtx.restore();
-  }
-
-  drawInvariant() {
-    this.invariantCtx.clearRect(
-      0,
-      0,
-      this.invariantCanvas.width,
-      this.invariantCanvas.height
-    );
-    this.invariantCtx.putImageData(this.data!.originalImageData, 0, 0);
-
-    for (const drawing of this.data!.drawings) {
-      switch (drawing.type) {
-        case "stroke":
-          this.drawStroke(drawing);
-          break;
-      }
-    }
-  }
-
   draw = () => {
     if (!this.data) return;
 
@@ -405,7 +368,7 @@ export class EditContext {
     this.ctx.scale(this.scale, this.scale);
 
     // draw invariant
-    this.drawInvariant();
+    this.data.drawToCanvas(this.invariantCtx);
 
     // draw tool specific things
     if (this.currentTool) {
@@ -413,23 +376,7 @@ export class EditContext {
     }
 
     // copy to canvas
-    const {
-      x: cropX,
-      y: cropY,
-      width: cropWidth,
-      height: cropHeight,
-    } = this.data.cropBox;
-    this.ctx.drawImage(
-      this.invariantCanvas,
-      cropX,
-      cropY,
-      cropWidth,
-      cropHeight,
-      0,
-      0,
-      cropWidth,
-      cropHeight
-    );
+    this.data.cropToCanvas(this.invariantCanvas, this.ctx);
 
     this.ctx.restore();
 

@@ -179,10 +179,7 @@ const TreeNode = ({
 
   if (node instanceof DirectoryNode) {
     selfMarkup = (
-      <div
-        className="flex items-center space-x-2"
-        style={{ paddingLeft: `${node.depth * 16 + 8}px` }}
-      >
+      <div className="flex items-center space-x-2">
         {node.isExpanded ? (
           <React.Fragment>
             <ChevronDown className="w-3 h-3 text-gray-100" />
@@ -199,12 +196,7 @@ const TreeNode = ({
     );
   }
   if (node instanceof FileNode) {
-    selfMarkup = (
-      <div className="py-2 px-2 flex flex-col items-center space-y-1 mb-3">
-        <span className="text-sm">{node.name}</span>
-        <canvas width="200" height="100" className="border max-h-48" />
-      </div>
-    );
+    selfMarkup = <span className="text-sm pl-2">{node.name}</span>;
   }
 
   const childrenMarkup = node instanceof DirectoryNode &&
@@ -226,6 +218,7 @@ const TreeNode = ({
             "cursor-pointer hover:bg-gray-800 py-2",
             isSelected && "bg-gray-600"
           )}
+          style={{ paddingLeft: `${node.depth * 16 + 8}px` }}
           onClick={onClick}
         >
           {selfMarkup}

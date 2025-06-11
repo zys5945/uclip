@@ -107,6 +107,64 @@ export class EditData {
 
     this.undoStack.push(action);
   };
+
+  drawStroke(ctx: CanvasRenderingContext2D, stroke: DrawnStroke) {
+    if (stroke.points.length === 0) {
+      return;
+    }
+
+    ctx.save();
+    ctx.strokeStyle = stroke.color;
+    ctx.lineWidth = stroke.width;
+
+    ctx.beginPath();
+    ctx.moveTo(stroke.points[0].x, stroke.points[0].y);
+    for (const point of stroke.points) {
+      ctx.lineTo(point.x, point.y);
+    }
+    ctx.stroke();
+
+    ctx.restore();
+  }
+
+  drawToCanvas(ctx: CanvasRenderingContext2D) {
+    ctx.clearRect(
+      0,
+      0,
+      this.originalImageData.width,
+      this.originalImageData.height
+    );
+    ctx.putImageData(this.originalImageData, 0, 0);
+
+    for (const drawing of this.drawings) {
+      switch (drawing.type) {
+        case "stroke":
+          this.drawStroke(ctx, drawing);
+          break;
+      }
+    }
+  }
+
+  cropToCanvas(source: HTMLCanvasElement, target: CanvasRenderingContext2D) {
+    const {
+      x: cropX,
+      y: cropY,
+      width: cropWidth,
+      height: cropHeight,
+    } = this.cropBox;
+
+    target.drawImage(
+      source,
+      cropX,
+      cropY,
+      cropWidth,
+      cropHeight,
+      0,
+      0,
+      cropWidth,
+      cropHeight
+    );
+  }
 }
 
 export const editDataStore = createStore({
