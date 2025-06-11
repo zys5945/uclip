@@ -5,6 +5,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { EditContext, EditTool } from "./edit-context";
 
 interface ToolData {
+  zoomInvariantPoint?: { x: number; y: number };
   dragged?: boolean;
   clickType: "in" | "out";
   eventHandlers?: { [key: string]: (e: MouseEvent) => void };
@@ -15,11 +16,26 @@ export class ZoomTool implements EditTool {
     toolData.clickType = "in";
     this.setCursorType(ctx, toolData);
 
+    const zoom = (by: number, zoomInvariantPoint: { x: number; y: number }) => {
+      const oldZoom = ctx.scale;
+      ctx.logScale += by * ctx.scaleStepSize;
+      const newZoom = ctx.scale;
+
+      const deltaX = (newZoom - oldZoom) * zoomInvariantPoint.x;
+      const deltaY = (newZoom - oldZoom) * zoomInvariantPoint.y;
+      ctx.translation.x -= deltaX;
+      ctx.translation.y -= deltaY;
+    };
+
+    const onMouseDown = (_: MouseEvent) => {
+      toolData.zoomInvariantPoint = ctx.mousePos;
+    };
+
     const onMouseMove = (_: MouseEvent) => {
       if (!ctx.isDragging || !ctx.mousePosPx || !ctx.lastMousePosPx) return;
       toolData.dragged = true;
       const deltaX = ctx.mousePosPx.x - ctx.lastMousePosPx.x;
-      ctx.logScale += deltaX * ctx.scaleSensitivity;
+      zoom(deltaX * ctx.scaleSensitivity, toolData.zoomInvariantPoint!);
     };
 
     const onMouseUp = (_: MouseEvent) => {
@@ -27,13 +43,18 @@ export class ZoomTool implements EditTool {
         toolData.dragged = false;
         return;
       }
-      ctx.logScale +=
-        (toolData.clickType === "out" ? -1 : 1) * ctx.scaleStepSize;
+      zoom((toolData.clickType === "out" ? -1 : 1) * ctx.scaleStepSize, {
+        x: ctx.mousePos!.x,
+        y: ctx.mousePos!.y,
+      });
     };
 
     toolData.eventHandlers = {};
+    toolData.eventHandlers.onMouseDown = onMouseDown;
     toolData.eventHandlers.onMouseMove = onMouseMove;
     toolData.eventHandlers.onMouseUp = onMouseUp;
+
+    ctx.subscribe("mousedown", onMouseDown);
     ctx.subscribe("mousemove", onMouseMove);
     ctx.subscribe("mouseup", onMouseUp);
   }
