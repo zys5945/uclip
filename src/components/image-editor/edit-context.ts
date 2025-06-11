@@ -116,6 +116,7 @@ export class EditContext {
     if (!data) return;
     this.cancelAnimationFrame();
 
+    const lastData = this.data;
     this.data = data;
 
     const { width, height } = data.originalImageData;
@@ -123,10 +124,13 @@ export class EditContext {
     this.invariantCanvas.width = width;
     this.invariantCanvas.height = height;
 
-    this.translation = {
-      x: this.canvas.width / 2 - width / 2,
-      y: this.canvas.height / 2 - height / 2,
-    };
+    // don't move camera when changing images
+    if (lastData == null) {
+      this.translation = {
+        x: this.canvas.width / 2 - width / 2,
+        y: this.canvas.height / 2 - height / 2,
+      };
+    }
   }
 
   _onEvent = (e: any) => {

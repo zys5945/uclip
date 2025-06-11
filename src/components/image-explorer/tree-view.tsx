@@ -141,11 +141,19 @@ const imageUIStore = createStore({
       root: context.root,
       selectedNode: event.node,
     }),
+
+    clear: (_) => ({
+      root: new DirectoryNode(-1, [], true),
+      selectedNode: null,
+    }),
   },
 });
 
 editDataStore.on("added", (event: { data: EditData }) => {
   imageUIStore.trigger.add({ data: event.data });
+});
+editDataStore.on("clear", (_) => {
+  imageUIStore.trigger.clear();
 });
 
 const TreeNode = ({

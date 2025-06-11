@@ -192,8 +192,18 @@ export const editDataStore = createStore({
       ...context,
       currentEditData: event.data,
     }),
+
+    clear: (_, _event, enq) => {
+      enq.emit.clear();
+      return {
+        editDatas: [],
+        dirtyEditDatas: [],
+        currentEditData: null,
+      };
+    },
   },
   emits: {
     added: (_payload: { data: EditData }) => {},
+    clear: () => {},
   },
 });
