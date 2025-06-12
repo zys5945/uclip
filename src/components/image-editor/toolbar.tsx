@@ -22,16 +22,17 @@ export interface ToolbarHandle {
 }
 
 export function Toolbar({
-  ctx,
+  editContextRef,
   ref,
 }: {
-  ctx: EditContext;
+  editContextRef: React.MutableRefObject<EditContext | null>;
   ref: React.Ref<ToolbarHandle>;
 }) {
   const [currentToolName, setCurrentToolName] = useState<string>("null");
 
   const useTool = (toolName: ToolName) => {
-    if (!ctx.initialized || !ctx.data) {
+    const ctx = editContextRef.current;
+    if (!ctx || !ctx.data) {
       setCurrentToolName("null");
       return;
     }
@@ -86,11 +87,14 @@ export function Toolbar({
 
     switch (currentToolName ?? 0) {
       case "zoom":
-        subToolbar = <ZoomToolSubToolbar ctx={ctx} />;
+        subToolbar = <ZoomToolSubToolbar editContextRef={editContextRef} />;
         break;
       case "crop":
         subToolbar = (
-          <CropToolSubToolbar ctx={ctx} onExit={() => useTool("pan")} />
+          <CropToolSubToolbar
+            editContextRef={editContextRef}
+            onExit={() => useTool("pan")}
+          />
         );
         break;
     }

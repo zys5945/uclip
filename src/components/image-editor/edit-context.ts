@@ -24,13 +24,11 @@ export interface EditTool {
  * all data stored here will be erased when application exits. persistent data should be put in EditData
  */
 export class EditContext {
-  initialized: boolean = false;
-
   rulerSize: number = 30;
-  canvas!: HTMLCanvasElement;
-  invariantCanvas!: HTMLCanvasElement;
-  ctx!: CanvasRenderingContext2D;
-  invariantCtx!: CanvasRenderingContext2D;
+  canvas: HTMLCanvasElement;
+  invariantCanvas: HTMLCanvasElement;
+  ctx: CanvasRenderingContext2D;
+  invariantCtx: CanvasRenderingContext2D;
 
   data: EditData | null = null;
 
@@ -96,7 +94,7 @@ export class EditContext {
 
   listeners: { [key: string]: ((e: any) => void)[] } = {};
 
-  init(canvas: HTMLCanvasElement) {
+  constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
     this.invariantCanvas = document.createElement("canvas");
     const ctx = this.canvas.getContext("2d");
@@ -108,16 +106,15 @@ export class EditContext {
     this.invariantCtx = invariantCtx;
 
     this._attachListeners();
-
-    this.initialized = true;
   }
 
-  setData(data?: EditData | null) {
-    if (!data) return;
+  setData(data: EditData | null) {
     this.cancelAnimationFrame();
 
     const lastData = this.data;
     this.data = data;
+
+    if (!data) return;
 
     const { width, height } = data.originalImageData;
 
@@ -125,6 +122,7 @@ export class EditContext {
     this.invariantCanvas.height = height;
 
     // don't move camera when changing images
+    // only move camera when first loading an image
     if (lastData == null) {
       this.translation = {
         x: this.canvas.width / 2 - width / 2,

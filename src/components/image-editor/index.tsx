@@ -1,5 +1,5 @@
 import { useSelector } from "@xstate/store/react";
-import { useEffect, useImperativeHandle, useMemo, useRef } from "react";
+import { useCallback, useEffect, useImperativeHandle, useRef } from "react";
 
 import { editDataStore } from "../edit-data";
 import { EditContext } from "./edit-context";
@@ -12,10 +12,6 @@ export interface ImageEditorHandle {
 
 export interface ImageEditorProps {
   ref: React.Ref<ImageEditorHandle>;
-  canvasInfoChangeCallback?: (
-    mousePos: { x: number; y: number },
-    color: Uint8ClampedArray
-  ) => void;
 }
 
 export function ImageEditor({ ref }: ImageEditorProps) {
@@ -25,58 +21,65 @@ export function ImageEditor({ ref }: ImageEditorProps) {
   );
 
   const toolbarRef = useRef<ToolbarHandle>(null);
-  const canvasContainerRef = useRef<HTMLDivElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const canvasContainerRef = useRef<HTMLDivElement | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
-  let editContext = useMemo(() => new EditContext(), []);
+  const editContext = useRef<EditContext | null>(null);
 
-  const initializeContext = () => {
-    if (!canvasRef.current) return;
-
-    if (editContext.initialized) {
-      return;
-    }
-
-    editContext.init(canvasRef.current);
+  // edit context is 1:1 with canvas
+  const canvasCallback = useCallback((canvas: HTMLCanvasElement) => {
+    canvasRef.current = canvas;
     updateCanvasSize();
 
-    editContext.subscribe("mousemove", () => {
-      if (
-        !editContext.initialized ||
-        !editContext.mousePos ||
-        !editContext.mousePosPx
-      )
-        return;
+    const newContext = new EditContext(canvas);
 
-      const color = editContext.ctx.getImageData(
-        editContext.mousePosPx.x,
-        editContext.mousePosPx.y,
+    // listeners
+    newContext.subscribe("mousemove", () => {
+      if (!newContext.mousePos || !newContext.mousePosPx) return;
+
+      const color = newContext.ctx.getImageData(
+        newContext.mousePosPx.x,
+        newContext.mousePosPx.y,
         1,
         1
       ).data;
 
       canvasInfoStore.trigger.set({
-        mousePos: editContext.mousePos,
+        mousePos: newContext.mousePos,
         color,
       });
     });
-  };
 
-  // set EditData
-  useEffect(() => {
-    if (!editContext.initialized) {
-      initializeContext();
+    // start drawing if there's data
+    const data = editDataStore.getSnapshot().context.currentEditData;
+    if (data) {
+      newContext.setData(data);
+      newContext.draw();
     }
 
-    editContext.setData(currentEditData);
+    // set context
+    editContext.current = newContext;
+
+    // tools
+    if (toolbarRef.current) {
+      toolbarRef.current.useTool("pan");
+    }
+
+    // when canvas unmounts, destroy context
+    return () => {
+      editContext.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!editContext.current) return;
+    editContext.current.setData(currentEditData);
 
     if (toolbarRef.current) {
       toolbarRef.current.useTool("pan");
     }
 
-    if (editContext.data) {
-      editContext.draw();
-    }
+    editContext.current.draw();
   }, [currentEditData]);
 
   function updateCanvasSize() {
@@ -86,19 +89,22 @@ export function ImageEditor({ ref }: ImageEditorProps) {
     canvasRef.current.width = containerBounds.width;
     canvasRef.current.height = containerBounds.height;
 
-    if (editContext.initialized) {
-      editContext.cancelAnimationFrame();
-      editContext.draw();
+    if (editContext.current) {
+      editContext.current.cancelAnimationFrame();
+      editContext.current.draw();
     }
   }
 
-  // update canvas size on resize
-  useEffect(() => {
-    if (!canvasContainerRef.current || !canvasRef.current) return;
-    const observer = new ResizeObserver(updateCanvasSize);
-    observer.observe(canvasContainerRef.current);
-    return () => observer.disconnect();
-  }, [currentEditData]);
+  // update canvas width and height on resize
+  const canvasContainerCallback = useCallback(
+    (canvasContainer: HTMLDivElement) => {
+      canvasContainerRef.current = canvasContainer;
+      const observer = new ResizeObserver(updateCanvasSize);
+      observer.observe(canvasContainer);
+      return () => observer.disconnect();
+    },
+    []
+  );
 
   // expose toolbar
   useImperativeHandle(
@@ -110,15 +116,15 @@ export function ImageEditor({ ref }: ImageEditorProps) {
         }
       },
     }),
-    [toolbarRef]
+    []
   );
 
   return currentEditData ? (
     <div className="w-full h-full flex flex-col space-y-0">
-      <Toolbar ctx={editContext} ref={toolbarRef} />
+      <Toolbar editContextRef={editContext} ref={toolbarRef} />
 
-      <div className="flex-1 w-full" ref={canvasContainerRef}>
-        <canvas ref={canvasRef} width={800} height={600} />
+      <div className="flex-1 w-full" ref={canvasContainerCallback}>
+        <canvas ref={canvasCallback} width={800} height={600} />
       </div>
     </div>
   ) : (

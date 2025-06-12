@@ -1,5 +1,5 @@
 import { ZoomInIcon, ZoomOutIcon } from "lucide-react";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { EditContext, EditTool } from "./edit-context";
@@ -78,11 +78,16 @@ export class ZoomTool implements EditTool {
   }
 }
 
-export function ZoomToolSubToolbar({ ctx }: { ctx: EditContext }) {
+export function ZoomToolSubToolbar({
+  editContextRef,
+}: {
+  editContextRef: React.MutableRefObject<EditContext | null>;
+}) {
   const [zoomTypeIndex, setZoomTypeIndex] = useState(0);
 
   const changeZoomType = (index: number) => {
-    ctx.messageTool(index === 0 ? "in" : "out");
+    if (!editContextRef.current) return;
+    editContextRef.current.messageTool(index === 0 ? "in" : "out");
     setZoomTypeIndex(index);
   };
 

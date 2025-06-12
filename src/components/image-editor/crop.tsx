@@ -317,14 +317,17 @@ export class CropTool implements EditTool {
 }
 
 interface CropToolSubToolbarProps {
-  ctx: EditContext;
+  editContextRef: React.MutableRefObject<EditContext | null>;
   onExit?: () => void;
 }
 
-export function CropToolSubToolbar({ ctx, onExit }: CropToolSubToolbarProps) {
+export function CropToolSubToolbar({
+  editContextRef,
+  onExit,
+}: CropToolSubToolbarProps) {
   const handleButtonClick = (value?: string | null) => {
-    if (!value) return;
-    ctx.messageTool(value);
+    if (!editContextRef.current || !value) return;
+    editContextRef.current.messageTool(value);
     onExit?.();
   };
 
