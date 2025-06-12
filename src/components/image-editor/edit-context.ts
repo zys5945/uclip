@@ -77,11 +77,14 @@ export class EditContext {
       this.translation.y !== this._invertedTransformParams.y ||
       this.scale !== this._invertedTransformParams.scale
     ) {
-      this.ctx.save();
-      this.ctx.translate(this.translation.x, this.translation.y);
-      this.ctx.scale(this.scale, this.scale);
-      this._invertedTransform = this.ctx.getTransform().inverse();
-      this.ctx.restore();
+      const matrix = new DOMMatrix();
+      matrix.a = this.scale;
+      matrix.b = 0;
+      matrix.c = 0;
+      matrix.d = this.scale;
+      matrix.e = this.translation.x;
+      matrix.f = this.translation.y;
+      this._invertedTransform = matrix.inverse();
 
       this._invertedTransformParams = {
         x: this.translation.x,
@@ -359,8 +362,6 @@ export class EditContext {
 
   draw = () => {
     if (!this.data) return;
-
-    this.cancelAnimationFrame();
 
     this.ctx.imageSmoothingEnabled = false;
 
