@@ -5,9 +5,29 @@ import { defineConfig } from "vite";
 
 const host = process.env.TAURI_DEV_HOST;
 
+function reactDevToolsPlugin() {
+  return {
+    name: "react-devtools",
+    transformIndexHtml: {
+      enforce: "pre" as const,
+      transform(html, ctx) {
+        if (ctx.server) {
+          // Development mode
+          return html.replace(
+            "<head>",
+            `<head><script src="http://localhost:8097"></script>`
+          );
+        }
+        // Production mode - no changes
+        return html;
+      },
+    },
+  };
+}
+
 // https://vitejs.dev/config/
 export default defineConfig(async () => ({
-  plugins: [react(), tailwindcss()],
+  plugins: [react(), tailwindcss(), reactDevToolsPlugin()],
 
   resolve: {
     alias: {
