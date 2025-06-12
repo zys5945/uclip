@@ -175,6 +175,7 @@ export const editDataStore = createStore({
   },
   on: {
     add: (context, event: { data: EditData }, enq) => {
+      // dont add if already exists
       for (const data of context.editDatas) {
         if (data.filepath === event.data.filepath) {
           return context;
@@ -182,9 +183,15 @@ export const editDataStore = createStore({
       }
 
       enq.emit.added({ data: event.data });
+
+      if (context.currentEditData === null) {
+        enq.emit.currentChanged({ current: event.data });
+      }
+
       return {
         ...context,
         editDatas: [...context.editDatas, event.data],
+        currentEditData: context.currentEditData ?? event.data,
       };
     },
 
@@ -204,6 +211,7 @@ export const editDataStore = createStore({
   },
   emits: {
     added: (_payload: { data: EditData }) => {},
+    currentChanged: (_payload: { current: EditData }) => {},
     clear: () => {},
   },
 });

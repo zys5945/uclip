@@ -19,10 +19,12 @@ const makeKey = (() => {
 
 class FileSystemNode {
   key: number;
+  parent: FileSystemNode | null;
   depth: number;
 
-  constructor(depth: number) {
+  constructor(parent: FileSystemNode | null, depth: number) {
     this.key = makeKey();
+    this.parent = parent;
     this.depth = depth;
   }
 }
@@ -32,8 +34,13 @@ class DirectoryNode extends FileSystemNode {
   isExpanded: boolean;
   children: FileSystemNode[];
 
-  constructor(depth: number, directory: string[], isExpanded = false) {
-    super(depth);
+  constructor(
+    parent: FileSystemNode | null,
+    depth: number,
+    directory: string[],
+    isExpanded = false
+  ) {
+    super(parent, depth);
     this.directory = directory;
     this.isExpanded = isExpanded;
     this.children = [];
@@ -41,7 +48,7 @@ class DirectoryNode extends FileSystemNode {
 
   addFile(directory: string[], name: string, editData: EditData) {
     const node = this.getOrCreateOwningDirectory(directory);
-    node.children.push(new FileNode(node.depth + 1, name, editData));
+    node.children.push(new FileNode(node, node.depth + 1, name, editData));
   }
 
   addDirectory(directory: string[]) {
@@ -72,12 +79,17 @@ class DirectoryNode extends FileSystemNode {
 
       const oldChildren = this.children;
       const oldChildrenParent = new DirectoryNode(
+        this,
         this.depth + 1,
         oldChildrenNewDirectory
       );
       oldChildrenParent.children = oldChildren;
 
-      const newChild = new DirectoryNode(this.depth + 1, newChildDirectory);
+      const newChild = new DirectoryNode(
+        this,
+        this.depth + 1,
+        newChildDirectory
+      );
 
       this.directory = newDirectory;
       this.children = [oldChildrenParent, newChild];
@@ -101,14 +113,35 @@ class DirectoryNode extends FileSystemNode {
         child instanceof DirectoryNode && child.directory[0] === firstPathName
     ) as DirectoryNode;
 
-    // found child: recurse, otherwise create new
+    // if found child then recurse, otherwise create new
     if (child) {
       return child.getOrCreateOwningDirectory(directory);
     } else {
-      const newChild = new DirectoryNode(this.depth + 1, directory);
+      const newChild = new DirectoryNode(this, this.depth + 1, directory);
       this.children.push(newChild);
       return newChild;
     }
+  }
+
+  find(predicate: (node: FileSystemNode) => boolean): FileSystemNode | null {
+    if (predicate(this)) {
+      return this;
+    }
+
+    for (const child of this.children) {
+      if (child instanceof DirectoryNode) {
+        const childResult = child.find(predicate);
+        if (childResult) {
+          return childResult;
+        }
+      } else {
+        if (predicate(child)) {
+          return child;
+        }
+      }
+    }
+
+    return null;
   }
 }
 
@@ -116,8 +149,13 @@ class FileNode extends FileSystemNode {
   name: string;
   editData: EditData;
 
-  constructor(depth: number, name: string, editData: EditData) {
-    super(depth);
+  constructor(
+    parent: FileSystemNode,
+    depth: number,
+    name: string,
+    editData: EditData
+  ) {
+    super(parent, depth);
     this.name = name;
     this.editData = editData;
   }
@@ -125,7 +163,7 @@ class FileNode extends FileSystemNode {
 
 const imageUIStore = createStore({
   context: {
-    root: new DirectoryNode(-1, [], true),
+    root: new DirectoryNode(null, -1, [], true),
     selectedNode: null as FileSystemNode | null,
   },
   on: {
@@ -143,7 +181,7 @@ const imageUIStore = createStore({
     }),
 
     clear: (_) => ({
-      root: new DirectoryNode(-1, [], true),
+      root: new DirectoryNode(null, -1, [], true),
       selectedNode: null,
     }),
   },
@@ -154,6 +192,25 @@ editDataStore.on("added", (event: { data: EditData }) => {
 });
 editDataStore.on("clear", (_) => {
   imageUIStore.trigger.clear();
+});
+editDataStore.on("currentChanged", (event: { current: EditData }) => {
+  const node = imageUIStore
+    .getSnapshot()
+    .context.root.find(
+      (node) => node instanceof FileNode && node.editData === event.current
+    );
+
+  if (node) {
+    let current = node.parent;
+    while (current) {
+      if (current instanceof DirectoryNode) {
+        current.isExpanded = true;
+      }
+      current = current.parent;
+    }
+
+    imageUIStore.trigger.setSelectedNode({ node });
+  }
 });
 
 const TreeNode = ({
