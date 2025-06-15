@@ -71,6 +71,7 @@ export function ImageEditor({ ref }: ImageEditorProps) {
     };
   }, []);
 
+  // set data
   useEffect(() => {
     if (!editContext.current) return;
     editContext.current.setData(currentEditData);

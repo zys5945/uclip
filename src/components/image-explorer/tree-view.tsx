@@ -1,11 +1,12 @@
 import { createStore } from "@xstate/store";
 import { useSelector } from "@xstate/store/react";
 import React from "react";
-import { ChevronRight, ChevronDown, Folder, FolderOpen } from "lucide-react";
+import { ChevronRight, Folder, FolderOpen } from "lucide-react";
 import { sep } from "@tauri-apps/api/path";
 
 import { EditData, editDataStore } from "../edit-data";
 import { cn } from "@/lib/utils";
+import { ScrollArea } from "../ui/scroll-area";
 
 const pathSep = sep();
 
@@ -242,16 +243,16 @@ const TreeNode = ({
   if (node instanceof DirectoryNode) {
     selfMarkup = (
       <div className="flex items-center space-x-2">
+        <ChevronRight
+          className={cn(
+            "w-3 h-3 text-gray-100 transition-transform duration-300",
+            node.isExpanded && "rotate-90"
+          )}
+        />
         {node.isExpanded ? (
-          <React.Fragment>
-            <ChevronDown className="w-3 h-3 text-gray-100" />
-            <FolderOpen className="w-4 h-4 text-blue-400" />
-          </React.Fragment>
+          <FolderOpen className="w-4 h-4 text-blue-400" />
         ) : (
-          <React.Fragment>
-            <ChevronRight className="w-3 h-3 text-gray-100" />
-            <Folder className="w-4 h-4 text-blue-400" />
-          </React.Fragment>
+          <Folder className="w-4 h-4 text-blue-400" />
         )}
         <span className="text-md truncate">{node.directory.join(pathSep)}</span>
       </div>
@@ -299,12 +300,12 @@ export const DirectoryTree = () => {
   }
 
   return (
-    <div className="w-full h-full flex flex-col p-2 select-none transition-colors duration-150">
+    <ScrollArea className="w-full h-full flex flex-col p-2 select-none transition-colors duration-150">
       <TreeNode
         node={uiContext.root}
         selectedNode={uiContext.selectedNode}
         showSelf={false}
       />
-    </div>
+    </ScrollArea>
   );
 };
