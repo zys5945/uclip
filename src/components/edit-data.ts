@@ -23,7 +23,7 @@ export interface PushToField {
   value: any;
 }
 
-export type UndoableAction = SetField | PushToField;
+export type EditAction = SetField | PushToField;
 
 /**
  * each edit context is unique to each image
@@ -47,8 +47,8 @@ export class EditData {
 
   drawings: Drawing[] = [];
 
-  undoStack: UndoableAction[] = [];
-  redoStack: UndoableAction[] = [];
+  undoStack: EditAction[] = [];
+  redoStack: EditAction[] = [];
 
   constructor(filepath: string, imageData: ImageData) {
     this.filepath = filepath;
@@ -66,14 +66,15 @@ export class EditData {
     };
   }
 
-  applyUndoableAction(action: UndoableAction) {
+  applyAction(action: EditAction) {
     this.redo(action);
     this.redoStack = [];
   }
 
-  pushToUndoStack(action: UndoableAction) {
+  pushToUndoStack(action: EditAction) {
     this.undoStack.push(action);
     this.redoStack = [];
+    editDataStore.trigger.updateEditData({ data: this });
   }
 
   undo = () => {
@@ -90,9 +91,10 @@ export class EditData {
     }
 
     this.redoStack.push(action);
+    editDataStore.trigger.updateEditData({ data: this });
   };
 
-  redo = (argAction?: UndoableAction) => {
+  redo = (argAction?: EditAction) => {
     const action = argAction ?? this.redoStack.pop();
     if (!action) return;
 
@@ -106,6 +108,7 @@ export class EditData {
     }
 
     this.undoStack.push(action);
+    editDataStore.trigger.updateEditData({ data: this });
   };
 
   drawStroke(ctx: CanvasRenderingContext2D, stroke: DrawnStroke) {
@@ -184,10 +187,6 @@ export const editDataStore = createStore({
 
       enq.emit.added({ data: event.data });
 
-      if (context.currentEditData === null) {
-        enq.emit.currentChanged({ current: event.data });
-      }
-
       return {
         ...context,
         editDatas: [...context.editDatas, event.data],
@@ -200,6 +199,19 @@ export const editDataStore = createStore({
       currentEditData: event.data,
     }),
 
+    updateEditData: (context, event: { data: EditData }, enq) => {
+      const index = context.editDatas.findIndex(
+        (data) => data.filepath === event.data.filepath
+      );
+      if (index === -1) {
+        return context;
+      }
+
+      enq.emit.editDataUpdated({ data: event.data });
+
+      return context;
+    },
+
     clear: (_, _event, enq) => {
       enq.emit.clear();
       return {
@@ -211,7 +223,7 @@ export const editDataStore = createStore({
   },
   emits: {
     added: (_payload: { data: EditData }) => {},
-    currentChanged: (_payload: { current: EditData }) => {},
+    editDataUpdated: (_payload: { data: EditData }) => {},
     clear: () => {},
   },
 });
