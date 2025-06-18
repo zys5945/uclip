@@ -175,7 +175,7 @@ export class CropTool implements EditTool {
     if (!message) return;
 
     if (message === "accept") {
-      ctx.data!.applyUndoableAction({
+      ctx.data!.applyAction({
         type: "SetField",
         fieldName: "cropBox",
         before: toolData.originalCropBox,

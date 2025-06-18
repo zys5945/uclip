@@ -121,7 +121,7 @@ export function ImageEditor({ ref }: ImageEditorProps) {
   );
 
   return currentEditData ? (
-    <div className="w-full h-full flex flex-col space-y-0">
+    <div className="w-full h-full flex flex-col gap-0">
       <Toolbar editContextRef={editContext} ref={toolbarRef} />
 
       <div className="flex-1 w-full" ref={canvasContainerCallback}>

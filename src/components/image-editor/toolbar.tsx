@@ -101,7 +101,7 @@ export function Toolbar({
 
     if (subToolbar) {
       return (
-        <div className="flex space-x-2 p-1 bg-stone-700 rounded-md">
+        <div className="flex gap-2 p-1 bg-stone-700 rounded-md">
           {subToolbar}
         </div>
       );
@@ -109,9 +109,9 @@ export function Toolbar({
   };
 
   return (
-    <div className="flex p-2 space-x-2">
+    <div className="flex p-2 gap-2">
       {/* main toolbar */}
-      <div className="flex space-x-2 p-1 bg-stone-700 rounded-md">
+      <div className="flex gap-2 p-1 bg-stone-700 rounded-md">
         <ToggleGroup
           type="single"
           className="gap-1"
