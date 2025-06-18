@@ -21,11 +21,11 @@ export function InfoPanel() {
           <div className="flex flex-col gap-2">
             <div className="flex justify-between">
               <span>X</span>
-              <span>{mousePos.x}</span>
+              <span>{mousePos.x.toFixed(3)}</span>
             </div>
             <div className="flex justify-between">
               <span>Y</span>
-              <span>{mousePos.y}</span>
+              <span>{mousePos.y.toFixed(3)}</span>
             </div>
           </div>
         </CardContent>
