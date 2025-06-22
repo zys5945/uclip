@@ -2,6 +2,7 @@ import { CheckIcon, XIcon } from "lucide-react";
 
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { EditContext, EditTool } from "./edit-context";
+import { pan } from "./pan";
 
 type MouseDownPosType =
   | "inside"
@@ -68,12 +69,16 @@ export class CropTool implements EditTool {
       if (
         !editContext.isDragging ||
         !editContext.mousePos ||
-        !editContext.lastMousePos ||
-        !toolData.currentCropBox ||
-        !toolData.mouseDownPosType ||
-        toolData.mouseDownPosType === "outside"
+        !editContext.lastMousePos
       )
         return;
+
+      if (toolData.mouseDownPosType === "outside") {
+        pan(editContext);
+        return;
+      }
+
+      if (!toolData.currentCropBox || !toolData.mouseDownPosType) return;
 
       const deltaX = editContext.mousePos.x - editContext.lastMousePos.x;
       const deltaY = editContext.mousePos.y - editContext.lastMousePos.y;
@@ -283,7 +288,7 @@ export class CropTool implements EditTool {
     if (mousePositionType === "inside") {
       return "move";
     } else if (mousePositionType === "outside") {
-      return "default";
+      return "grab";
     } else {
       return mousePositionType.split("-")[1] + "-resize";
     }
