@@ -33,8 +33,8 @@ export class PenTool implements EditTool {
         ctx.data!.drawings.length - 1
       ] as DrawnStroke;
       stroke.points.push({
-        x: ctx.mousePos.x,
-        y: ctx.mousePos.y,
+        x: ctx.mousePos.x + ctx.data!.cropBox.x,
+        y: ctx.mousePos.y + ctx.data!.cropBox.y,
       });
     };
 
