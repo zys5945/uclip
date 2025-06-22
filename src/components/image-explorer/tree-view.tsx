@@ -21,13 +21,11 @@ const makeKey = (() => {
 
 class FileSystemNode {
   key: number;
-  parent: FileSystemNode | null;
-  depth: number;
+  parent: DirectoryNode | null;
 
-  constructor(parent: FileSystemNode | null, depth: number) {
+  constructor(parent: DirectoryNode | null) {
     this.key = makeKey();
     this.parent = parent;
-    this.depth = depth;
   }
 }
 
@@ -35,22 +33,24 @@ class DirectoryNode extends FileSystemNode {
   directory: string[];
   isExpanded: boolean;
   children: FileSystemNode[];
+  depth: number;
 
   constructor(
-    parent: FileSystemNode | null,
-    depth: number,
+    parent: DirectoryNode | null,
     directory: string[],
+    depth: number,
     isExpanded = false
   ) {
-    super(parent, depth);
+    super(parent);
     this.directory = directory;
+    this.depth = depth;
     this.isExpanded = isExpanded;
     this.children = [];
   }
 
   addFile(directory: string[], name: string, editData: EditData) {
     const node = this.getOrCreateOwningDirectory(directory);
-    node.children.push(new FileNode(node, node.depth + 1, name, editData));
+    node.children.push(new FileNode(node, name, editData));
   }
 
   addDirectory(directory: string[]) {
@@ -76,27 +76,23 @@ class DirectoryNode extends FileSystemNode {
     // matched partially, need to split
     if (overlap >= 0 && overlap < this.directory.length - 1) {
       const newDirectory = this.directory.slice(0, overlap + 1);
-      const oldChildrenNewDirectory = this.directory.slice(overlap + 1);
-      const newChildDirectory = directory.slice(overlap + 1);
+      const childNewDirectory = this.directory.slice(overlap + 1);
 
       const oldChildren = this.children;
       const oldChildrenParent = new DirectoryNode(
         this,
-        this.depth + 1,
-        oldChildrenNewDirectory
+        childNewDirectory,
+        this.depth + 1
       );
       oldChildrenParent.children = oldChildren;
-
-      const newChild = new DirectoryNode(
-        this,
-        this.depth + 1,
-        newChildDirectory
-      );
+      for (const child of oldChildren) {
+        child.parent = oldChildrenParent;
+      }
 
       this.directory = newDirectory;
-      this.children = [oldChildrenParent, newChild];
+      this.children = [oldChildrenParent];
 
-      return newChild;
+      return this;
     }
 
     // self directory fully consumed
@@ -119,7 +115,7 @@ class DirectoryNode extends FileSystemNode {
     if (child) {
       return child.getOrCreateOwningDirectory(directory);
     } else {
-      const newChild = new DirectoryNode(this, this.depth + 1, directory);
+      const newChild = new DirectoryNode(this, directory, this.depth + 1);
       this.children.push(newChild);
       return newChild;
     }
@@ -152,13 +148,8 @@ class FileNode extends FileSystemNode {
   editData: EditData;
   invariantCanvas: HTMLCanvasElement;
 
-  constructor(
-    parent: FileSystemNode,
-    depth: number,
-    name: string,
-    editData: EditData
-  ) {
-    super(parent, depth);
+  constructor(parent: DirectoryNode, name: string, editData: EditData) {
+    super(parent);
     this.name = name;
     this.editData = editData;
 
@@ -201,7 +192,7 @@ class FileNode extends FileSystemNode {
 
 const imageUIStore = createStore({
   context: {
-    root: new DirectoryNode(null, -1, [], true),
+    root: new DirectoryNode(null, [], -1, true),
     selectedNode: null as FileSystemNode | null,
   },
   on: {
@@ -247,7 +238,7 @@ const imageUIStore = createStore({
     },
 
     clear: (_) => ({
-      root: new DirectoryNode(null, -1, [], true),
+      root: new DirectoryNode(null, [], -1, true),
       selectedNode: null,
     }),
   },
@@ -274,6 +265,10 @@ const renderCanvas = (canvas: HTMLCanvasElement | null, node: FileNode) => {
     return;
   }
   const { width, height } = node.calcCanvasDimensions(300);
+
+  canvas.style.width = `${width}px`;
+  canvas.style.height = `${height}px`;
+
   canvas.width = width;
   canvas.height = height;
   node.drawToCanvas(canvas);
@@ -325,13 +320,20 @@ const RenderFileNode = ({ node }: { node: FileNode }) => {
   return (
     <div
       className={cn(
-        "flex flex-col items-center gap-1 cursor-pointer hover:bg-gray-800 py-2 justify-center",
+        "cursor-pointer hover:bg-gray-800 py-2",
         isSelected && "bg-gray-600"
       )}
       onClick={onClick}
     >
-      <h1>{node.name}</h1>
-      <canvas ref={canvasCallback} />
+      <div className="flex flex-col gap-1">
+        <h1 className="mx-auto">{node.name}</h1>
+        <canvas
+          className="mx-auto"
+          ref={canvasCallback}
+          width={300}
+          height={300}
+        />
+      </div>
     </div>
   );
 };
@@ -355,7 +357,7 @@ const RenderDirectoryNode = ({
       {showSelf && (
         <div
           className="flex items-center gap-2 cursor-pointer hover:bg-gray-800 py-2"
-          style={{ paddingLeft: `${node.depth * 16 + 8}px` }}
+          style={{ paddingLeft: `${node.depth * 8}px` }}
           onClick={onClick}
         >
           <ChevronRight
@@ -395,9 +397,7 @@ export const DirectoryTree = () => {
 
   return (
     <ScrollArea className="w-full h-full flex flex-col p-2 select-none transition-colors duration-150">
-      <div className="w-full h-full">
-        <RenderDirectoryNode node={uiContext.root} showSelf={false} />
-      </div>
+      <RenderDirectoryNode node={uiContext.root} showSelf={false} />
     </ScrollArea>
   );
 };
