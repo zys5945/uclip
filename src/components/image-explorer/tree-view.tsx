@@ -1,6 +1,6 @@
 import { createStore } from "@xstate/store";
 import { useSelector } from "@xstate/store/react";
-import React from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronRight, Folder, FolderOpen } from "lucide-react";
 import { sep } from "@tauri-apps/api/path";
 
@@ -149,6 +149,7 @@ class DirectoryNode extends FileSystemNode {
 class FileNode extends FileSystemNode {
   name: string;
   editData: EditData;
+  invariantCanvas: HTMLCanvasElement;
 
   constructor(
     parent: FileSystemNode,
@@ -159,6 +160,41 @@ class FileNode extends FileSystemNode {
     super(parent, depth);
     this.name = name;
     this.editData = editData;
+
+    this.invariantCanvas = document.createElement("canvas");
+    this.invariantCanvas.width = editData.originalImageData.width;
+    this.invariantCanvas.height = editData.originalImageData.height;
+  }
+
+  calcCanvasDimensions(maxDimension: number) {
+    const scale =
+      maxDimension /
+      Math.max(this.editData.cropBox.width, this.editData.cropBox.height);
+
+    const width = Math.floor(this.editData.cropBox.width * scale);
+    const height = Math.floor(this.editData.cropBox.height * scale);
+
+    return {
+      width,
+      height,
+    };
+  }
+
+  drawToCanvas(canvas: HTMLCanvasElement) {
+    const ctx = canvas.getContext("2d")!;
+    const invariantCtx = this.invariantCanvas.getContext("2d")!;
+    this.editData.drawToCanvas(invariantCtx);
+    ctx.drawImage(
+      this.invariantCanvas,
+      this.editData.cropBox.x,
+      this.editData.cropBox.y,
+      this.editData.cropBox.width,
+      this.editData.cropBox.height,
+      0,
+      0,
+      canvas.width,
+      canvas.height
+    );
   }
 }
 
@@ -174,12 +210,40 @@ const imageUIStore = createStore({
         event.data.filename,
         event.data
       );
+      return context;
     },
 
-    setSelectedNode: (context, event: { node: FileSystemNode | null }) => ({
-      root: context.root,
-      selectedNode: event.node,
-    }),
+    selectNode(context, event: { node: FileSystemNode | null }) {
+      return {
+        root: context.root,
+        selectedNode: event.node,
+      };
+    },
+
+    selectNodeWithData: (context, event: { editData: EditData | null }) => {
+      const node = context.root.find(
+        (node) => node instanceof FileNode && node.editData === event.editData
+      );
+      if (!node) {
+        return {
+          root: context.root,
+          selectedNode: null,
+        };
+      }
+
+      let current = node.parent;
+      while (current) {
+        if (current instanceof DirectoryNode) {
+          current.isExpanded = true;
+        }
+        current = current.parent;
+      }
+
+      return {
+        root: context.root,
+        selectedNode: node,
+      };
+    },
 
     clear: (_) => ({
       root: new DirectoryNode(null, -1, [], true),
@@ -190,104 +254,138 @@ const imageUIStore = createStore({
 
 editDataStore.on("added", (event: { data: EditData }) => {
   imageUIStore.trigger.add({ data: event.data });
+  if (imageUIStore.getSnapshot().context.selectedNode === null) {
+    imageUIStore.trigger.selectNodeWithData({ editData: event.data });
+  }
 });
 editDataStore.on("clear", (_) => {
   imageUIStore.trigger.clear();
 });
-editDataStore.on("currentChanged", (event: { current: EditData }) => {
-  const node = imageUIStore
-    .getSnapshot()
-    .context.root.find(
-      (node) => node instanceof FileNode && node.editData === event.current
-    );
-
-  if (node) {
-    let current = node.parent;
-    while (current) {
-      if (current instanceof DirectoryNode) {
-        current.isExpanded = true;
-      }
-      current = current.parent;
-    }
-
-    imageUIStore.trigger.setSelectedNode({ node });
-  }
+const currentEditData = editDataStore.select(
+  (context) => context.currentEditData
+);
+currentEditData.subscribe((data) => {
+  imageUIStore.trigger.selectNodeWithData({ editData: data });
 });
 
-const TreeNode = ({
-  node,
-  selectedNode,
-  showSelf = true,
-}: {
-  node: FileSystemNode;
-  selectedNode: FileSystemNode | null;
-  showSelf?: boolean;
-}) => {
+const renderCanvas = (canvas: HTMLCanvasElement | null, node: FileNode) => {
+  if (!canvas) {
+    return;
+  }
+  const { width, height } = node.calcCanvasDimensions(300);
+  canvas.width = width;
+  canvas.height = height;
+  node.drawToCanvas(canvas);
+};
+
+const RenderFileNode = ({ node }: { node: FileNode }) => {
+  const selectedNode = useSelector(
+    imageUIStore,
+    (store) => store.context.selectedNode,
+    // only notify if selected node was or will be the node we're rendering
+    (prev, next) => prev !== node && next !== node
+  );
   const isSelected = selectedNode === node;
 
-  const onClick = () => {
-    if (node instanceof DirectoryNode) {
-      node.isExpanded = !node.isExpanded;
-    }
-    if (node instanceof FileNode) {
-      editDataStore.trigger.setCurrentEditData({
-        data: node.editData,
-      });
-    }
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
-    imageUIStore.trigger.setSelectedNode({ node });
+  if (canvasRef.current) {
+    node.drawToCanvas(canvasRef.current);
+  }
+
+  const canvasCallback = useCallback((canvas: HTMLCanvasElement) => {
+    canvasRef.current = canvas;
+    renderCanvas(canvasRef.current, node);
+  }, []);
+
+  useEffect(() => {
+    const sub = editDataStore.on(
+      "editDataUpdated",
+      (event: { data: EditData }) => {
+        if (event.data === node.editData && canvasRef.current) {
+          // canvas dimensions have to be set here instead of passing in into canvas as props
+          // the canvas bitmap will be reset upon setting width/height, and the content will be wiped
+          // drawing needs to occur after the dimensions are set, which is inconvenient if doing through props
+          renderCanvas(canvasRef.current, node);
+        }
+      }
+    );
+    return () => {
+      sub.unsubscribe();
+    };
+  }, []);
+
+  const onClick = () => {
+    editDataStore.trigger.setCurrentEditData({
+      data: node.editData,
+    });
   };
 
-  let selfMarkup;
-
-  if (node instanceof DirectoryNode) {
-    selfMarkup = (
-      <div className="flex items-center space-x-2">
-        <ChevronRight
-          className={cn(
-            "w-3 h-3 text-gray-100 transition-transform duration-300",
-            node.isExpanded && "rotate-90"
-          )}
-        />
-        {node.isExpanded ? (
-          <FolderOpen className="w-4 h-4 text-blue-400" />
-        ) : (
-          <Folder className="w-4 h-4 text-blue-400" />
-        )}
-        <span className="text-md truncate">{node.directory.join(pathSep)}</span>
+  return (
+    <div
+      className={cn(
+        "cursor-pointer hover:bg-gray-800 py-2 justify-center",
+        isSelected && "bg-gray-600"
+      )}
+      style={{ paddingLeft: `${node.depth * 16 + 8}px` }}
+      onClick={onClick}
+    >
+      <div className="flex flex-col items-center gap-1">
+        <h1>{node.name}</h1>
+        <canvas ref={canvasCallback} />
       </div>
-    );
-  }
-  if (node instanceof FileNode) {
-    selfMarkup = <span className="text-sm pl-2">{node.name}</span>;
-  }
+    </div>
+  );
+};
 
-  const childrenMarkup = node instanceof DirectoryNode &&
-    node.children &&
-    node.children.length !== 0 &&
-    node.isExpanded && (
-      <React.Fragment>
-        {node.children!.map((child) => (
-          <TreeNode key={child.key} node={child} selectedNode={selectedNode} />
-        ))}
-      </React.Fragment>
-    );
+const RenderDirectoryNode = ({
+  node,
+  showSelf = true,
+}: {
+  node: DirectoryNode;
+  showSelf: boolean;
+}) => {
+  const [isExpanded, setIsExpanded] = useState(node.isExpanded);
+
+  const onClick = () => {
+    node.isExpanded = !node.isExpanded;
+    setIsExpanded(!isExpanded);
+  };
 
   return (
     <div>
-      {showSelf && selfMarkup && (
+      {showSelf && (
         <div
-          className={cn(
-            "cursor-pointer hover:bg-gray-800 py-2",
-            isSelected && "bg-gray-600"
-          )}
+          className="cursor-pointer hover:bg-gray-800 py-2 justify-center"
           style={{ paddingLeft: `${node.depth * 16 + 8}px` }}
           onClick={onClick}
         >
-          {selfMarkup}
+          <div className="flex items-center gap-2 ">
+            <ChevronRight
+              className={cn(
+                "w-3 h-3 text-gray-100 transition-transform duration-300",
+                isExpanded && "rotate-90"
+              )}
+            />
+            {isExpanded ? (
+              <FolderOpen className="w-4 h-4 text-blue-400" />
+            ) : (
+              <Folder className="w-4 h-4 text-blue-400" />
+            )}
+            <span className="text-md truncate">
+              {node.directory.join(pathSep)}
+            </span>
+          </div>
         </div>
       )}
-      {childrenMarkup}
+      {isExpanded &&
+        node.children!.map((child) =>
+          child instanceof DirectoryNode ? (
+            <RenderDirectoryNode key={child.key} node={child} showSelf={true} />
+          ) : (
+            <RenderFileNode key={child.key} node={child as FileNode} />
+          )
+        )}
     </div>
   );
 };
@@ -301,11 +399,7 @@ export const DirectoryTree = () => {
 
   return (
     <ScrollArea className="w-full h-full flex flex-col p-2 select-none transition-colors duration-150">
-      <TreeNode
-        node={uiContext.root}
-        selectedNode={uiContext.selectedNode}
-        showSelf={false}
-      />
+      <RenderDirectoryNode node={uiContext.root} showSelf={false} />
     </ScrollArea>
   );
 };

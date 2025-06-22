@@ -69,7 +69,7 @@ export class EditContext {
     y: 0,
     scale: 1,
   };
-  _invertedTransform?: DOMMatrix;
+  _invertedTransform: DOMMatrix = new DOMMatrix();
   get invertedTransform() {
     if (
       !this._invertedTransform ||
@@ -77,14 +77,13 @@ export class EditContext {
       this.translation.y !== this._invertedTransformParams.y ||
       this.scale !== this._invertedTransformParams.scale
     ) {
-      const matrix = new DOMMatrix();
-      matrix.a = this.scale;
-      matrix.b = 0;
-      matrix.c = 0;
-      matrix.d = this.scale;
-      matrix.e = this.translation.x;
-      matrix.f = this.translation.y;
-      this._invertedTransform = matrix.inverse();
+      this._invertedTransform.a = this.scale;
+      this._invertedTransform.b = 0;
+      this._invertedTransform.c = 0;
+      this._invertedTransform.d = this.scale;
+      this._invertedTransform.e = this.translation.x;
+      this._invertedTransform.f = this.translation.y;
+      this._invertedTransform.invertSelf();
 
       this._invertedTransformParams = {
         x: this.translation.x,

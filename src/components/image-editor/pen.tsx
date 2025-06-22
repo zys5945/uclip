@@ -61,5 +61,6 @@ export class PenTool implements EditTool {
   deactivate(ctx: EditContext, toolData: ToolData) {
     ctx.unsubscribe("mousedown", toolData.eventSubscribers.mousedown);
     ctx.unsubscribe("mousemove", toolData.eventSubscribers.mousemove);
+    ctx.unsubscribe("mouseup", toolData.eventSubscribers.mouseup);
   }
 }
