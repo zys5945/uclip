@@ -7,6 +7,7 @@ import { sep } from "@tauri-apps/api/path";
 import { EditData, editDataStore } from "../edit-data";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "../ui/scroll-area";
+import React from "react";
 
 const pathSep = sep();
 
@@ -324,16 +325,13 @@ const RenderFileNode = ({ node }: { node: FileNode }) => {
   return (
     <div
       className={cn(
-        "cursor-pointer hover:bg-gray-800 py-2 justify-center",
+        "flex flex-col items-center gap-1 cursor-pointer hover:bg-gray-800 py-2 justify-center",
         isSelected && "bg-gray-600"
       )}
-      style={{ paddingLeft: `${node.depth * 16 + 8}px` }}
       onClick={onClick}
     >
-      <div className="flex flex-col items-center gap-1">
-        <h1>{node.name}</h1>
-        <canvas ref={canvasCallback} />
-      </div>
+      <h1>{node.name}</h1>
+      <canvas ref={canvasCallback} />
     </div>
   );
 };
@@ -353,29 +351,27 @@ const RenderDirectoryNode = ({
   };
 
   return (
-    <div>
+    <React.Fragment>
       {showSelf && (
         <div
-          className="cursor-pointer hover:bg-gray-800 py-2 justify-center"
+          className="flex items-center gap-2 cursor-pointer hover:bg-gray-800 py-2"
           style={{ paddingLeft: `${node.depth * 16 + 8}px` }}
           onClick={onClick}
         >
-          <div className="flex items-center gap-2 ">
-            <ChevronRight
-              className={cn(
-                "w-3 h-3 text-gray-100 transition-transform duration-300",
-                isExpanded && "rotate-90"
-              )}
-            />
-            {isExpanded ? (
-              <FolderOpen className="w-4 h-4 text-blue-400" />
-            ) : (
-              <Folder className="w-4 h-4 text-blue-400" />
+          <ChevronRight
+            className={cn(
+              "w-3 h-3 text-gray-100 transition-transform duration-300 min-w-[24px]",
+              isExpanded && "rotate-90"
             )}
-            <span className="text-md truncate">
-              {node.directory.join(pathSep)}
-            </span>
-          </div>
+          />
+          {isExpanded ? (
+            <FolderOpen className="w-4 h-4 text-blue-400 min-w-[24px]" />
+          ) : (
+            <Folder className="w-4 h-4 text-blue-400 min-w-[24px]" />
+          )}
+          <span className="text-md truncate">
+            {node.directory.join(pathSep)}
+          </span>
         </div>
       )}
       {isExpanded &&
@@ -386,7 +382,7 @@ const RenderDirectoryNode = ({
             <RenderFileNode key={child.key} node={child as FileNode} />
           )
         )}
-    </div>
+    </React.Fragment>
   );
 };
 
@@ -399,7 +395,9 @@ export const DirectoryTree = () => {
 
   return (
     <ScrollArea className="w-full h-full flex flex-col p-2 select-none transition-colors duration-150">
-      <RenderDirectoryNode node={uiContext.root} showSelf={false} />
+      <div className="w-full h-full">
+        <RenderDirectoryNode node={uiContext.root} showSelf={false} />
+      </div>
     </ScrollArea>
   );
 };
