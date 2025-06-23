@@ -74,7 +74,32 @@ export class SelectTool implements EditTool {
     ctx.invariantCtx.strokeRect(x, y, width, height);
   }
 
-  onMessage(): void {}
+  onMessage(ctx: EditContext, toolData: any, message?: string): void {
+    if (!ctx.data || !toolData.startPos || !toolData.endPos || !message) return;
+
+    if (message === "copy") {
+      ctx.data.drawToCanvas(ctx.invariantCtx);
+      ctx.clipboardCanvas.width = ctx.data.cropBox.width;
+      ctx.clipboardCanvas.height = ctx.data.cropBox.height;
+      ctx.clipboardCtx.drawImage(
+        ctx.invariantCanvas,
+        toolData.startPos.x,
+        toolData.startPos.y,
+        toolData.endPos.x - toolData.startPos.x,
+        toolData.endPos.y - toolData.startPos.y,
+        0,
+        0,
+        ctx.clipboardCanvas.width,
+        ctx.clipboardCanvas.height
+      );
+
+      ctx.clipboardCanvas.toBlob(async (blob) => {
+        if (!blob) return;
+        const clipboardItem = new ClipboardItem({ "image/png": blob });
+        await navigator.clipboard.write([clipboardItem]);
+      });
+    }
+  }
 
   deactivate(ctx: EditContext, toolData: ToolData) {
     ctx.canvas.style.cursor = "default";

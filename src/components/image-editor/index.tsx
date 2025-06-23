@@ -7,7 +7,7 @@ import { Toolbar, ToolbarHandle, ToolName } from "./toolbar";
 import { canvasInfoStore } from "./canvas-info";
 
 export interface ImageEditorHandle {
-  useTool: (toolName: ToolName) => void;
+  getToolbarHandle: () => ToolbarHandle | null;
 }
 
 export interface ImageEditorProps {
@@ -107,18 +107,9 @@ export function ImageEditor({ ref }: ImageEditorProps) {
     []
   );
 
-  // expose toolbar
-  useImperativeHandle(
-    ref,
-    () => ({
-      useTool: (toolName: ToolName) => {
-        if (toolbarRef.current) {
-          toolbarRef.current.useTool(toolName);
-        }
-      },
-    }),
-    []
-  );
+  useImperativeHandle(ref, () => ({
+    getToolbarHandle: () => toolbarRef.current,
+  }));
 
   return currentEditData ? (
     <div className="w-full h-full flex flex-col gap-0">

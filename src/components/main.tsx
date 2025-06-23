@@ -12,7 +12,6 @@ import {
 import { ImageEditor, ImageEditorHandle } from "./image-editor";
 import { ImageExplorer } from "./image-explorer";
 import { InfoPanel } from "./info-panel";
-import { canvasInfoStore } from "./image-editor/canvas-info";
 import { handleShortcuts } from "./shortcuts";
 
 const previewMinWidthPx = 200;
@@ -55,7 +54,9 @@ export function Main() {
   // keyboard shortcuts
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      handleShortcuts(e, imageEditorRef);
+      const toolbarHandle = imageEditorRef.current?.getToolbarHandle();
+      if (!toolbarHandle) return;
+      handleShortcuts(e, toolbarHandle);
     };
     document.addEventListener("keydown", onKeyDown);
     return () => {

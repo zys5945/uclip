@@ -32,7 +32,9 @@ export const TOOL_NAMES = [
 export type ToolName = (typeof TOOL_NAMES)[number];
 
 export interface ToolbarHandle {
+  getCurrentToolName: () => ToolName | null;
   useTool: (toolName: ToolName) => void;
+  messageTool: (message: string) => void;
 }
 
 export function Toolbar({
@@ -97,14 +99,25 @@ export function Toolbar({
     setCurrentToolName(nextToolName);
   };
 
+  const messageTool = (message: string) => {
+    if (!editContextRef.current || !editContextRef.current.currentTool) return;
+    editContextRef.current.messageTool(message);
+  };
+
+  const getCurrentToolName = () => {
+    return currentToolName === "null" ? null : (currentToolName as ToolName);
+  };
+
   useImperativeHandle(
     ref,
     () => {
       return {
+        getCurrentToolName,
         useTool,
+        messageTool,
       };
     },
-    []
+    [currentToolName]
   );
 
   const renderSubToolbar = () => {

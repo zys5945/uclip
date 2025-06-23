@@ -1,6 +1,5 @@
-import { ImageEditorHandle } from "./image-editor";
 import { canvasInfoStore } from "./image-editor/canvas-info";
-import { TOOL_NAMES } from "./image-editor/toolbar";
+import { TOOL_NAMES, ToolbarHandle } from "./image-editor/toolbar";
 
 const copyInfoPanel = () => {
   const canvasInfo = canvasInfoStore.getSnapshot().context;
@@ -13,16 +12,19 @@ const copyInfoPanel = () => {
   );
 };
 
+const copySelection = (toolbarHandle: ToolbarHandle) => {
+  toolbarHandle.messageTool("copy");
+};
+
 export const handleShortcuts = (
   e: KeyboardEvent,
-  imageEditorRef: React.RefObject<ImageEditorHandle | null>
+  toolbarHandle: ToolbarHandle | null
 ) => {
-  if (!imageEditorRef.current) return;
-  const useTool = imageEditorRef.current.useTool;
+  if (!toolbarHandle) return;
 
   // deactivate current tool on escape
   if (e.key === "Escape") {
-    useTool("pan");
+    toolbarHandle.useTool("pan");
     return;
   }
 
@@ -32,23 +34,27 @@ export const handleShortcuts = (
   const num = parseInt(e.key);
   if (!isNaN(num)) {
     if (num < 1 || num > TOOL_NAMES.length) return;
-    useTool(TOOL_NAMES[num - 1]);
+    toolbarHandle.useTool(TOOL_NAMES[num - 1]);
     return;
   }
 
   switch (e.key) {
     case "c":
-      copyInfoPanel();
+      if (toolbarHandle.getCurrentToolName() === "select") {
+        copySelection(toolbarHandle);
+      } else {
+        copyInfoPanel();
+      }
       break;
     case "z":
       if (e.shiftKey) {
-        useTool("redo");
+        toolbarHandle.useTool("redo");
       } else {
-        useTool("undo");
+        toolbarHandle.useTool("undo");
       }
       break;
     case "Z":
-      useTool("redo");
+      toolbarHandle.useTool("redo");
       break;
   }
 };

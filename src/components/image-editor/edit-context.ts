@@ -27,8 +27,10 @@ export class EditContext {
   rulerSize: number = 30;
   canvas: HTMLCanvasElement;
   invariantCanvas: HTMLCanvasElement;
+  clipboardCanvas: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D;
   invariantCtx: CanvasRenderingContext2D;
+  clipboardCtx: CanvasRenderingContext2D;
 
   data: EditData | null = null;
 
@@ -99,13 +101,16 @@ export class EditContext {
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
     this.invariantCanvas = document.createElement("canvas");
+    this.clipboardCanvas = document.createElement("canvas");
     const ctx = this.canvas.getContext("2d");
     const invariantCtx = this.invariantCanvas.getContext("2d")!;
-    if (!ctx || !invariantCtx) {
+    const clipboardCtx = this.clipboardCanvas.getContext("2d");
+    if (!ctx || !invariantCtx || !clipboardCtx) {
       throw new Error("Failed to get canvas context");
     }
     this.ctx = ctx;
     this.invariantCtx = invariantCtx;
+    this.clipboardCtx = clipboardCtx;
 
     this._attachListeners();
   }
