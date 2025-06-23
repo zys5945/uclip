@@ -5,6 +5,8 @@ interface ToolData {
   strokeColor: string;
   strokeWidth: number;
 
+  currentStroke?: DrawnStroke;
+
   eventSubscribers: { [key: string]: (e: any) => void };
 }
 
@@ -14,36 +16,35 @@ export class PenTool implements EditTool {
     toolData.strokeWidth = 5;
 
     const onMouseDown = () => {
-      const stroke: DrawnStroke = {
+      toolData.currentStroke = {
         type: "stroke",
         color: toolData.strokeColor,
         width: toolData.strokeWidth,
         points: [],
       };
-
-      ctx.data!.drawings.push(stroke);
     };
 
     const onMouseMove = () => {
-      if (!ctx.isDragging || !ctx.mousePos || !ctx.lastMousePos) {
+      if (!ctx.isDragging || !ctx.mousePos || !ctx.lastMousePos || !ctx.data) {
         return;
       }
 
-      const stroke = ctx.data!.drawings[
-        ctx.data!.drawings.length - 1
-      ] as DrawnStroke;
-      stroke.points.push({
-        x: ctx.mousePos.x + ctx.data!.cropBox.x,
-        y: ctx.mousePos.y + ctx.data!.cropBox.y,
-      });
+      toolData.currentStroke!.points.push(
+        ctx.data.toOriginalPos(ctx.mousePos.x, ctx.mousePos.y)
+      );
     };
 
     const onMouseUp = () => {
-      ctx.data!.pushToUndoStack({
+      if (!ctx.data || !toolData.currentStroke) return;
+
+      ctx.data.drawings.push(toolData.currentStroke);
+      ctx.data.pushToUndoStack({
         type: "PushToField",
         fieldName: "drawings",
-        value: ctx.data!.drawings[ctx.data!.drawings.length - 1],
+        value: toolData.currentStroke,
       });
+
+      toolData.currentStroke = void 0;
     };
 
     toolData.eventSubscribers = {};
@@ -55,7 +56,10 @@ export class PenTool implements EditTool {
     ctx.subscribe("mouseup", toolData.eventSubscribers.mouseup);
   }
 
-  draw(): void {}
+  draw(ctx: EditContext, toolData: any): void {
+    if (!ctx.data || !toolData.currentStroke) return;
+    ctx.data.drawStroke(ctx.invariantCtx, toolData.currentStroke);
+  }
   onMessage(): void {}
 
   deactivate(ctx: EditContext, toolData: ToolData) {

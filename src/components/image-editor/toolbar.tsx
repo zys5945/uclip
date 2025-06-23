@@ -4,6 +4,7 @@ import {
   PencilIcon,
   RedoIcon,
   SearchIcon,
+  SquareDashed,
   UndoIcon,
 } from "lucide-react";
 import { useState, useImperativeHandle } from "react";
@@ -16,8 +17,19 @@ import { PenTool } from "./pen";
 import { ZoomTool, ZoomToolSubToolbar } from "./zoom";
 import { editDataStore } from "../edit-data";
 import { useSelector } from "@xstate/store/react";
+import { SelectTool } from "./select";
 
-export type ToolName = "pan" | "zoom" | "crop" | "pen" | "undo" | "redo";
+export const TOOL_NAMES = [
+  "pan",
+  "select",
+  "zoom",
+  "crop",
+  "pen",
+  "undo",
+  "redo",
+] as const;
+
+export type ToolName = (typeof TOOL_NAMES)[number];
 
 export interface ToolbarHandle {
   useTool: (toolName: ToolName) => void;
@@ -66,6 +78,9 @@ export function Toolbar({
     switch (nextToolName) {
       case "pan":
         tool = new PanTool();
+        break;
+      case "select":
+        tool = new SelectTool();
         break;
       case "zoom":
         tool = new ZoomTool();
@@ -130,6 +145,9 @@ export function Toolbar({
         >
           <ToggleGroupItem value="pan">
             <MoveIcon />
+          </ToggleGroupItem>
+          <ToggleGroupItem value="select">
+            <SquareDashed />
           </ToggleGroupItem>
           <ToggleGroupItem value="zoom">
             <SearchIcon />

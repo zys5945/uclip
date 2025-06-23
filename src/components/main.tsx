@@ -13,6 +13,7 @@ import { ImageEditor, ImageEditorHandle } from "./image-editor";
 import { ImageExplorer } from "./image-explorer";
 import { InfoPanel } from "./info-panel";
 import { canvasInfoStore } from "./image-editor/canvas-info";
+import { handleShortcuts } from "./shortcuts";
 
 const previewMinWidthPx = 200;
 const previewStartSize = 15;
@@ -51,57 +52,10 @@ export function Main() {
     };
   }, []);
 
-  const copyInfoPanel = () => {
-    const canvasInfo = canvasInfoStore.getSnapshot().context;
-    navigator.clipboard.writeText(
-      `((${canvasInfo.mousePos.x.toFixed(0)}, ${canvasInfo.mousePos.y.toFixed(
-        0
-      )}), (${canvasInfo.color[0]}, ${canvasInfo.color[1]}, ${
-        canvasInfo.color[2]
-      }))`
-    );
-  };
-
   // keyboard shortcuts
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      if (!imageEditorRef.current) return;
-      const useTool = imageEditorRef.current.useTool;
-
-      // deactivate current tool on escape
-      if (e.key === "Escape") {
-        useTool("pan");
-        return;
-      }
-      if (!e.ctrlKey) return;
-      switch (e.key) {
-        // ctrl + num to switch tool
-        case "1":
-          useTool("pan");
-          break;
-        case "2":
-          useTool("zoom");
-          break;
-        case "3":
-          useTool("crop");
-          break;
-        case "4":
-          useTool("pen");
-          break;
-        case "c":
-          copyInfoPanel();
-          break;
-        case "z":
-          if (e.shiftKey) {
-            useTool("redo");
-          } else {
-            useTool("undo");
-          }
-          break;
-        case "Z":
-          useTool("redo");
-          break;
-      }
+      handleShortcuts(e, imageEditorRef);
     };
     document.addEventListener("keydown", onKeyDown);
     return () => {

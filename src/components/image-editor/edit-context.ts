@@ -376,7 +376,9 @@ export class EditContext {
 
     // draw tool specific things
     if (this.currentTool) {
+      this.invariantCtx.save();
       this.currentTool.draw(this, this.currentToolData);
+      this.invariantCtx.restore();
     }
 
     // copy to canvas

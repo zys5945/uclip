@@ -78,3 +78,11 @@ export async function selectDirectory() {
     }
   }
 }
+
+export function clampNumber(
+  value: number,
+  lower: number,
+  upper: number
+): number {
+  return Math.max(lower, Math.min(value, upper));
+}

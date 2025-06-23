@@ -3,6 +3,7 @@ import { CheckIcon, XIcon } from "lucide-react";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { EditContext, EditTool } from "./edit-context";
 import { pan } from "./pan";
+import { clampNumber } from "@/lib/utils";
 
 type MouseDownPosType =
   | "inside"
@@ -305,24 +306,23 @@ export class CropTool implements EditTool {
     constraintHeight: number,
     minCropSize: number = 20
   ) {
-    cropBox.x = Math.max(0, Math.min(cropBox.x, constraintWidth - minCropSize));
-    cropBox.y = Math.max(
-      0,
-      Math.min(cropBox.y, constraintHeight - minCropSize)
-    );
-    cropBox.width = Math.max(
+    cropBox.x = clampNumber(cropBox.x, 0, constraintWidth - minCropSize);
+    cropBox.y = clampNumber(cropBox.y, 0, constraintHeight - minCropSize);
+    cropBox.width = clampNumber(
+      cropBox.width,
       minCropSize,
-      Math.min(cropBox.width, constraintWidth - cropBox.x)
+      constraintWidth - cropBox.x
     );
-    cropBox.height = Math.max(
+    cropBox.height = clampNumber(
+      cropBox.height,
       minCropSize,
-      Math.min(cropBox.height, constraintHeight - cropBox.y)
+      constraintHeight - cropBox.y
     );
   }
 }
 
 interface CropToolSubToolbarProps {
-  editContextRef: React.MutableRefObject<EditContext | null>;
+  editContextRef: React.RefObject<EditContext | null>;
   onExit?: () => void;
 }
 

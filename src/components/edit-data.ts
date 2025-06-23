@@ -66,6 +66,17 @@ export class EditData {
     };
   }
 
+  /**
+   * given a point in canvas coordinates, return the canvas coordinates as if the crop box was not applied
+   * i.e. if the original image was at (0, 0) in the canvas
+   */
+  toOriginalPos(x: number, y: number): { x: number; y: number } {
+    return {
+      x: x + this.cropBox.x,
+      y: y + this.cropBox.y,
+    };
+  }
+
   applyAction(action: EditAction) {
     this.redo(action);
     this.redoStack = [];
