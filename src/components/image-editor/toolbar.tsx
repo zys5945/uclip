@@ -14,6 +14,8 @@ import { EditContext, EditTool } from "./edit-context";
 import { PanTool } from "./pan";
 import { PenTool } from "./pen";
 import { ZoomTool, ZoomToolSubToolbar } from "./zoom";
+import { editDataStore } from "../edit-data";
+import { useSelector } from "@xstate/store/react";
 
 export type ToolName = "pan" | "zoom" | "crop" | "pen" | "undo" | "redo";
 
@@ -25,13 +27,21 @@ export function Toolbar({
   editContextRef,
   ref,
 }: {
-  editContextRef: React.MutableRefObject<EditContext | null>;
+  editContextRef: React.RefObject<EditContext | null>;
   ref: React.Ref<ToolbarHandle>;
 }) {
   const [currentToolName, setCurrentToolName] = useState<string>("null");
+  const undoStackLength = useSelector(
+    editDataStore,
+    (state) => state.context.currentEditData?.undoStack.length
+  );
+  const redoStackLength = useSelector(
+    editDataStore,
+    (state) => state.context.currentEditData?.redoStack.length
+  );
 
   const useTool = (toolName: ToolName) => {
-    const ctx = editContextRef.current;
+    const ctx = editContextRef?.current;
     if (!ctx || !ctx.data) {
       setCurrentToolName("null");
       return;
@@ -130,10 +140,10 @@ export function Toolbar({
           <ToggleGroupItem value="pen">
             <PencilIcon />
           </ToggleGroupItem>
-          <ToggleGroupItem value="undo">
+          <ToggleGroupItem value="undo" disabled={undoStackLength === 0}>
             <UndoIcon />
           </ToggleGroupItem>
-          <ToggleGroupItem value="redo">
+          <ToggleGroupItem value="redo" disabled={redoStackLength === 0}>
             <RedoIcon />
           </ToggleGroupItem>
         </ToggleGroup>

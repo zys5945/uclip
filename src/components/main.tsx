@@ -51,6 +51,17 @@ export function Main() {
     };
   }, []);
 
+  const copyInfoPanel = () => {
+    const canvasInfo = canvasInfoStore.getSnapshot().context;
+    navigator.clipboard.writeText(
+      `((${canvasInfo.mousePos.x.toFixed(0)}, ${canvasInfo.mousePos.y.toFixed(
+        0
+      )}), (${canvasInfo.color[0]}, ${canvasInfo.color[1]}, ${
+        canvasInfo.color[2]
+      }))`
+    );
+  };
+
   // keyboard shortcuts
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -78,14 +89,7 @@ export function Main() {
           useTool("pen");
           break;
         case "c":
-          const canvasInfo = canvasInfoStore.getSnapshot().context;
-          navigator.clipboard.writeText(
-            `((${canvasInfo.mousePos.x.toFixed(
-              0
-            )}, ${canvasInfo.mousePos.y.toFixed(0)}), (${
-              canvasInfo.color[0]
-            }, ${canvasInfo.color[1]}, ${canvasInfo.color[2]}))`
-          );
+          copyInfoPanel();
           break;
         case "z":
           if (e.shiftKey) {
@@ -93,6 +97,9 @@ export function Main() {
           } else {
             useTool("undo");
           }
+          break;
+        case "Z":
+          useTool("redo");
           break;
       }
     };
