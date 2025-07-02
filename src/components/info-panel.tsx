@@ -3,6 +3,7 @@ import { useSelector } from "@xstate/store/react";
 
 import { canvasInfoStore } from "./image-editor/canvas-info";
 import { Separator } from "@/components/ui/separator";
+import { UndoStackDisplay } from "./undo-stack-display";
 
 export function InfoPanel() {
   const canvasInfo = useSelector(canvasInfoStore, (state) => state.context);
@@ -71,6 +72,8 @@ export function InfoPanel() {
         <span>HSL</span>
         <span>{hsl && hsl.join(", ")}</span>
       </div>
+      <Separator className="my-2" />
+      <UndoStackDisplay />
     </div>
   );
 }

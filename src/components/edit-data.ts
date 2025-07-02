@@ -47,6 +47,7 @@ export class EditData {
 
   drawings: Drawing[] = [];
 
+  // both stacks are last in first out
   undoStack: EditAction[] = [];
   redoStack: EditAction[] = [];
 

@@ -106,7 +106,7 @@ export function PenToolSubToolbar() {
   };
 
   return (
-    <div className="flex items-center gap-4 px-2">
+    <div className="flex items-center gap-4 px-2 select-none">
       {/* Color Picker */}
       <Popover open={isColorPickerOpen} onOpenChange={setIsColorPickerOpen}>
         <PopoverTrigger asChild>
