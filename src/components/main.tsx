@@ -14,6 +14,7 @@ import { ImageExplorer } from "./image-explorer";
 import { InfoPanel } from "./info-panel";
 import { handleShortcuts } from "./shortcuts";
 import { ActionHistoryDisplay } from "./action-history-display";
+import { DragDropReceiver } from "./drag-drop-receiver";
 
 const previewMinWidthPx = 200;
 const previewStartSize = 15;
@@ -70,7 +71,7 @@ export function Main() {
       id="clip-manager-panel-group"
       direction="horizontal"
       autoSaveId="clip-manager-panel-layout"
-      className="w-full h-full"
+      className="w-full"
     >
       {/* Left side - Image previews */}
       <ResizablePanel defaultSize={previewStartSize} minSize={previewMinSize}>
@@ -105,6 +106,8 @@ export function Main() {
           <ActionHistoryDisplay />
         </div>
       </ResizablePanel>
+
+      <DragDropReceiver />
     </ResizablePanelGroup>
   );
 }

@@ -1,5 +1,6 @@
-import { selectDirectory } from "@/lib/utils";
 import { Upload } from "lucide-react";
+
+import { selectDirectory } from "@/lib/file";
 
 export function InputPrompt() {
   return (

@@ -1,7 +1,8 @@
 import { listen } from "@tauri-apps/api/event";
 import { useEffect, useState } from "react";
 
-import { cn, readFileIntoStore } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+import { readFileIntoStore } from "@/lib/file";
 
 export function DragDropReceiver() {
   const [dragActive, setDragActive] = useState(false);
@@ -38,7 +39,7 @@ export function DragDropReceiver() {
   return (
     <div
       className={cn(
-        "absolute inset-0 w-full h-full pointer-events-none top-0 left-0 transition-all ease-in-out duration-100 border-solid border-0 rounded-lg border-blue-200",
+        "absolute inset-0 w-full h-full pointer-events-none top-0 left-0 transition-all ease-in-out duration-100 border-solid border-0 rounded-lg border-blue-200 z-10000",
         dragActive && "border-4"
       )}
     ></div>

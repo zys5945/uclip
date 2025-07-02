@@ -6,7 +6,6 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  position: fixed;
   top: 0;
   left: 0;
   right: 0;
@@ -33,4 +32,9 @@
 
 .titlebar-button:active {
   background: rgba(255, 255, 255, 0.5);
+}
+
+/* Prevent menu buttons from being draggable */
+.titlebar button[data-radix-popover-trigger] {
+  -webkit-app-region: no-drag;
 }

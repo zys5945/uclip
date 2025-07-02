@@ -2,11 +2,29 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import { Minus, PictureInPicture2, Square, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import {
+  selectFile,
+  selectDirectory,
+  saveCurrentImage,
+  exportCurrentImage,
+  clearAll,
+} from "@/lib/file";
 import "./titlebar.css";
+import React from "react";
+import { getSelectedEditData } from "./edit-data";
 
 export function Titlebar() {
+  const [menuOpen, setMenuOpen] = useState<string | null>(null);
   const [isMaximized, setIsMaximized] = useState(false);
 
+  // monitor maximization state
   useEffect(() => {
     const checkMaximized = async () => {
       const window = getCurrentWindow();
@@ -16,7 +34,6 @@ export function Titlebar() {
 
     checkMaximized();
 
-    // Listen for window state changes
     const unlisten = getCurrentWindow().listen("tauri://resize", () => {
       checkMaximized();
     });
@@ -27,8 +44,7 @@ export function Titlebar() {
   }, []);
 
   const handleMinimize = async () => {
-    const window = getCurrentWindow();
-    await window.minimize();
+    await getCurrentWindow().minimize();
   };
 
   const handleMaximize = async () => {
@@ -41,26 +57,90 @@ export function Titlebar() {
   };
 
   const handleClose = async () => {
-    const window = getCurrentWindow();
-    await window.close();
+    await getCurrentWindow().close();
   };
 
   const handleStartDragging = async () => {
-    const window = getCurrentWindow();
-    await window.startDragging();
+    await getCurrentWindow().startDragging();
+  };
+
+  const buttons: {
+    [menuName: string]: {
+      label: string;
+      onClick: () => void;
+      enabled?: () => boolean;
+    }[][];
+  } = {
+    File: [
+      [
+        { label: "Open File", onClick: selectFile },
+        { label: "Open Folder", onClick: selectDirectory },
+      ],
+      [
+        {
+          label: "Save",
+          onClick: saveCurrentImage,
+          enabled: () => getSelectedEditData() !== null,
+        },
+        {
+          label: "Export",
+          onClick: exportCurrentImage,
+          enabled: () => getSelectedEditData() !== null,
+        },
+      ],
+      [{ label: "Clear All", onClick: clearAll }],
+    ],
   };
 
   return (
     <div className="titlebar" data-tauri-drag-region>
       {/* left side */}
-      <div
-        className="flex items-center gap-2 px-3 flex-1"
-        onMouseDown={handleStartDragging}
-      >
-        <div className="w-4 h-4 bg-white rounded-sm flex items-center justify-center text-xs font-bold text-stone-800">
+      <div className="flex items-center gap-2 px-3">
+        <div className="w-4 h-4 bg-white rounded-sm flex items-center justify-center text-xs font-bold text-white">
           U
         </div>
+
+        {/* menu items*/}
+        {Object.entries(buttons).map(([name, items]) => (
+          <Popover
+            key={name}
+            open={menuOpen === name}
+            onOpenChange={(open) => setMenuOpen(open ? name : null)}
+          >
+            <PopoverTrigger asChild>
+              <button className="px-2 py-1 text-white text-sm hover:bg-white/30 rounded transition-colors">
+                {name}
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-48 p-1" align="start">
+              <div className="space-y-1">
+                {items.map((itemGroup, i) => (
+                  <React.Fragment key={i}>
+                    {itemGroup.map(({ label, onClick, enabled }) => (
+                      <Button
+                        key={label}
+                        variant="ghost"
+                        className="w-full justify-start text-sm h-8 hover:bg-white/20"
+                        disabled={enabled ? !enabled() : false}
+                        onClick={() => {
+                          setMenuOpen(null);
+                          onClick();
+                        }}
+                      >
+                        {label}
+                      </Button>
+                    ))}
+                    {i < items.length - 1 && <Separator className="my-1" />}
+                  </React.Fragment>
+                ))}
+              </div>
+            </PopoverContent>
+          </Popover>
+        ))}
       </div>
+
+      {/* middle draggable area */}
+      <div className="flex-1 h-full" onMouseDown={handleStartDragging} />
 
       {/* right side - Window controls */}
       <div className="flex">

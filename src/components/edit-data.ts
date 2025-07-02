@@ -239,3 +239,7 @@ export const editDataStore = createStore({
     clear: () => {},
   },
 });
+
+export function getSelectedEditData(): EditData | null {
+  return editDataStore.getSnapshot().context.currentEditData;
+}
