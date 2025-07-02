@@ -9,10 +9,9 @@ import {
   getResizeHandleElement,
 } from "react-resizable-panels";
 
-import { ImageEditor, ImageEditorHandle } from "./image-editor";
+import { ImageEditor } from "./image-editor";
 import { ImageExplorer } from "./image-explorer";
 import { InfoPanel } from "./info-panel";
-import { handleShortcuts } from "./shortcuts";
 import { ActionHistoryDisplay } from "./action-history-display";
 import { DragDropReceiver } from "./drag-drop-receiver";
 
@@ -26,8 +25,6 @@ export function Main() {
   const [previewMinSize, setPreviewMinSize] = useState(previewStartSize);
   const [propertiesMinSize, setPropertiesMinSize] =
     useState(propertiesStartSize);
-
-  const imageEditorRef = useRef<ImageEditorHandle | null>(null);
 
   // pseudo pixel-based min sizes
   useEffect(() => {
@@ -53,19 +50,6 @@ export function Main() {
     };
   }, []);
 
-  // keyboard shortcuts
-  useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
-      const toolbarHandle = imageEditorRef.current?.getToolbarHandle();
-      if (!toolbarHandle) return;
-      handleShortcuts(e, toolbarHandle);
-    };
-    document.addEventListener("keydown", onKeyDown);
-    return () => {
-      document.removeEventListener("keydown", onKeyDown);
-    };
-  }, []);
-
   return (
     <ResizablePanelGroup
       id="clip-manager-panel-group"
@@ -87,7 +71,7 @@ export function Main() {
       {/* Middle - Main image display */}
       <ResizablePanel>
         <div className="w-full h-full">
-          <ImageEditor ref={imageEditorRef} />
+          <ImageEditor />
         </div>
       </ResizablePanel>
 

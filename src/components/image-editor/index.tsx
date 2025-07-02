@@ -1,20 +1,30 @@
 import { useSelector } from "@xstate/store/react";
-import { useCallback, useEffect, useImperativeHandle, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 
 import { editDataStore } from "../edit-data";
-import { EditContext } from "./edit-context";
-import { Toolbar, ToolbarHandle, ToolName } from "./toolbar";
 import { canvasInfoStore } from "./canvas-info";
+import { EditContext } from "./edit-context";
+import { TOOL_NAMES, Toolbar, ToolbarHandle } from "./toolbar";
 
-export interface ImageEditorHandle {
-  getToolbarHandle: () => ToolbarHandle | null;
+function copyInfoPanel() {
+  const canvasInfo = canvasInfoStore.getSnapshot().context;
+
+  if (!canvasInfo.mousePos || !canvasInfo.color) return;
+
+  navigator.clipboard.writeText(
+    `((${canvasInfo.mousePos.x.toFixed(0)}, ${canvasInfo.mousePos.y.toFixed(
+      0
+    )}), (${canvasInfo.color[0]}, ${canvasInfo.color[1]}, ${
+      canvasInfo.color[2]
+    }))`
+  );
 }
 
-export interface ImageEditorProps {
-  ref: React.Ref<ImageEditorHandle>;
+function copySelection(toolbarHandle: ToolbarHandle) {
+  toolbarHandle.messageTool("copy");
 }
 
-export function ImageEditor({ ref }: ImageEditorProps) {
+export function ImageEditor() {
   const currentEditData = useSelector(
     editDataStore,
     (state) => state.context.currentEditData
@@ -54,7 +64,7 @@ export function ImageEditor({ ref }: ImageEditorProps) {
     };
   }, []);
 
-  // set data
+  // set data when it changes
   useEffect(() => {
     if (!editContext.current) return;
     editContext.current.setData(currentEditData);
@@ -66,6 +76,7 @@ export function ImageEditor({ ref }: ImageEditorProps) {
     editContext.current.draw();
   }, [currentEditData]);
 
+  // update canvas width and height on resize
   function updateCanvasSize() {
     if (!canvasContainerRef.current || !canvasRef.current) return;
 
@@ -79,7 +90,6 @@ export function ImageEditor({ ref }: ImageEditorProps) {
     }
   }
 
-  // update canvas width and height on resize
   const canvasContainerCallback = useCallback(
     (canvasContainer: HTMLDivElement) => {
       canvasContainerRef.current = canvasContainer;
@@ -90,12 +100,60 @@ export function ImageEditor({ ref }: ImageEditorProps) {
     []
   );
 
-  useImperativeHandle(ref, () => ({
-    getToolbarHandle: () => toolbarRef.current,
-  }));
+  // shortcuts
+  const handleShortcuts = (e: KeyboardEvent) => {
+    if (!toolbarRef.current) return;
+    const toolbarHandle = toolbarRef.current;
+
+    // deactivate current tool on escape
+    if (e.key === "Escape") {
+      toolbarHandle.useTool("pan");
+      return;
+    }
+
+    if (!e.ctrlKey) return;
+
+    // ctrl + num to switch tool
+    const num = parseInt(e.key);
+    if (!isNaN(num)) {
+      if (num < 1 || num > TOOL_NAMES.length) return;
+      toolbarHandle.useTool(TOOL_NAMES[num - 1]);
+      return;
+    }
+
+    switch (e.key) {
+      case "c":
+        if (toolbarHandle.getCurrentToolName() === "select") {
+          copySelection(toolbarHandle);
+        } else {
+          copyInfoPanel();
+        }
+        break;
+      case "z":
+        if (e.shiftKey) {
+          toolbarHandle.useTool("redo");
+        } else {
+          toolbarHandle.useTool("undo");
+        }
+        break;
+      case "Z":
+        toolbarHandle.useTool("redo");
+        break;
+    }
+  };
+  const containerCallback = useCallback((node: HTMLDivElement) => {
+    node?.addEventListener("keydown", handleShortcuts);
+    return () => {
+      node?.removeEventListener("keydown", handleShortcuts);
+    };
+  }, []);
 
   return currentEditData ? (
-    <div className="w-full h-full flex flex-col gap-0">
+    <div
+      className="w-full h-full flex flex-col gap-0"
+      tabIndex={0}
+      ref={containerCallback}
+    >
       <Toolbar editContextRef={editContext} ref={toolbarRef} />
 
       <div className="flex-1 w-full" ref={canvasContainerCallback}>
