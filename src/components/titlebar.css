@@ -1,0 +1,36 @@
+.titlebar {
+  height: 32px;
+  background: linear-gradient(180deg, #404040 0%, #2a2a2a 100%);
+  border-bottom: 1px solid #1a1a1a;
+  user-select: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+}
+
+.titlebar-button {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  width: 46px;
+  height: 32px;
+  user-select: none;
+  -webkit-user-select: none;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  transition-property: color;
+}
+
+.titlebar-button:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.titlebar-button:active {
+  background: rgba(255, 255, 255, 0.5);
+}
