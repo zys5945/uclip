@@ -3,6 +3,9 @@ import { TOOL_NAMES, ToolbarHandle } from "./image-editor/toolbar";
 
 const copyInfoPanel = () => {
   const canvasInfo = canvasInfoStore.getSnapshot().context;
+
+  if (!canvasInfo.mousePos || !canvasInfo.color) return;
+
   navigator.clipboard.writeText(
     `((${canvasInfo.mousePos.x.toFixed(0)}, ${canvasInfo.mousePos.y.toFixed(
       0

@@ -1,83 +1,76 @@
 import convert from "color-convert";
-import React from "react";
 import { useSelector } from "@xstate/store/react";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { canvasInfoStore } from "./image-editor/canvas-info";
+import { Separator } from "@/components/ui/separator";
 
 export function InfoPanel() {
-  const sections: React.JSX.Element[] = [];
-
   const canvasInfo = useSelector(canvasInfoStore, (state) => state.context);
-  const { mousePos, color } = canvasInfo;
+  const { mousePos, color, selection } = canvasInfo;
 
-  if (mousePos) {
-    sections.push(
-      <Card key="mosePos">
-        <CardHeader>
-          <CardTitle>Position</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col gap-2">
-            <div className="flex justify-between">
-              <span>X</span>
-              <span>{mousePos.x.toFixed(3)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Y</span>
-              <span>{mousePos.y.toFixed(3)}</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
+  let rgb: [r: number, g: number, b: number] | undefined;
+  let cmyk: [c: number, m: number, y: number, k: number] | undefined;
+  let hsl: [h: number, s: number, l: number] | undefined;
   if (color) {
-    const rgb: [r: number, g: number, b: number] = [
-      color[0],
-      color[1],
-      color[2],
-    ];
-    const cmyk = convert.rgb.cmyk(rgb);
-    const hsl = convert.rgb.hsl(rgb);
-
-    sections.push(
-      <Card key="color">
-        <CardHeader>
-          <CardTitle>
-            <div className="flex flex-row justify-between items-center">
-              Color
-              <div
-                className="size-6 rounded-full"
-                style={{ backgroundColor: `rgb(${rgb})` }}
-              ></div>
-            </div>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col gap-2">
-            <div className="flex justify-between">
-              <span>RGBA</span>
-              <span>{color.join(", ")}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>CMYK</span>
-              <span>{cmyk.join(", ")}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>HSL</span>
-              <span>{hsl.join(", ")}</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    );
+    rgb = [color[0], color[1], color[2]];
+    cmyk = convert.rgb.cmyk(rgb);
+    hsl = convert.rgb.hsl(rgb);
   }
 
   return (
-    <div className="w-full h-full flex flex-col gap-2 p-2 justify-center">
-      {sections}
+    <div className="w-full h-full flex flex-col p-4 gap-2">
+      <div className="font-semibold">Cursor Position</div>
+      <div className="flex flex-col gap-2">
+        <div className="flex justify-between">
+          <span>X</span>
+          <span>{mousePos && mousePos.x.toFixed(3)}</span>
+        </div>
+        <div className="flex justify-between">
+          <span>Y</span>
+          <span>{mousePos && mousePos.y.toFixed(3)}</span>
+        </div>
+      </div>
+      <Separator className="my-2" />
+      <div className="font-semibold">Selection</div>
+      <div className="grid grid-cols-2 gap-y-2 gap-x-8">
+        <div className="flex flex-row justify-between">
+          <span>X</span>
+          <span>{selection && selection.x}</span>
+        </div>
+        <div className="flex flex-row justify-between">
+          <span>Y</span>
+          <span>{selection && selection.y}</span>
+        </div>
+        <div className="flex flex-row justify-between">
+          <span>Width</span>
+          <span>{selection && selection.width}</span>
+        </div>
+        <div className="flex flex-row justify-between">
+          <span>Height</span>
+          <span>{selection && selection.height}</span>
+        </div>
+      </div>
+      <Separator className="my-2" />
+      <div className="font-semibold">Cursor Color</div>
+      <div className="flex flex-row justify-between items-center">
+        Color
+        <div
+          className="size-6 rounded-full"
+          style={{ backgroundColor: `rgb(${rgb})` }}
+        ></div>
+      </div>
+      <div className="flex justify-between">
+        <span>RGBA</span>
+        <span>{color && color.join(", ")}</span>
+      </div>
+      <div className="flex justify-between">
+        <span>CMYK</span>
+        <span>{cmyk && cmyk.join(", ")}</span>
+      </div>
+      <div className="flex justify-between">
+        <span>HSL</span>
+        <span>{hsl && hsl.join(", ")}</span>
+      </div>
     </div>
   );
 }

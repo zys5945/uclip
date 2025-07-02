@@ -1,4 +1,5 @@
 import { EditData } from "../edit-data";
+import { canvasInfoStore } from "./canvas-info";
 
 export interface EditTool {
   /**
@@ -171,6 +172,12 @@ export class EditContext {
         this.invertedTransform
       );
       this.mousePosPx = { x: e.offsetX, y: e.offsetY };
+
+      canvasInfoStore.trigger.setCursorInfo({
+        mousePos: this.mousePos,
+        color: this.ctx.getImageData(this.mousePosPx.x, this.mousePosPx.y, 1, 1)
+          .data,
+      });
     });
 
     this.subscribe("mouseup", () => {
@@ -367,6 +374,7 @@ export class EditContext {
   draw = () => {
     if (!this.data) return;
 
+    this.invariantCtx.imageSmoothingEnabled = false;
     this.ctx.imageSmoothingEnabled = false;
 
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);

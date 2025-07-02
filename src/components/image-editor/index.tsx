@@ -33,23 +33,6 @@ export function ImageEditor({ ref }: ImageEditorProps) {
 
     const newContext = new EditContext(canvas);
 
-    // listeners
-    newContext.subscribe("mousemove", () => {
-      if (!newContext.mousePos || !newContext.mousePosPx) return;
-
-      const color = newContext.ctx.getImageData(
-        newContext.mousePosPx.x,
-        newContext.mousePosPx.y,
-        1,
-        1
-      ).data;
-
-      canvasInfoStore.trigger.set({
-        mousePos: newContext.mousePos,
-        color,
-      });
-    });
-
     // start drawing if there's data
     const data = editDataStore.getSnapshot().context.currentEditData;
     if (data) {

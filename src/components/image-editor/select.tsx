@@ -1,5 +1,6 @@
 import { clampNumber } from "@/lib/utils";
 import { EditContext, EditTool } from "./edit-context";
+import { canvasInfoStore } from "./canvas-info";
 
 function clampToCropBox(
   pos: { x: number; y: number },
@@ -41,6 +42,15 @@ export class SelectTool implements EditTool {
         ctx.data.toOriginalPos(ctx.mousePos.x, ctx.mousePos.y),
         ctx.data.cropBox
       );
+
+      canvasInfoStore.trigger.setSelection({
+        selection: {
+          x: toolData.startPos.x,
+          y: toolData.startPos.y,
+          width: toolData.endPos.x - toolData.startPos.x,
+          height: toolData.endPos.y - toolData.startPos.y,
+        },
+      });
     };
 
     ctx.subscribe("mousedown", onMouseDown);
@@ -68,7 +78,7 @@ export class SelectTool implements EditTool {
     const height = toolData.endPos.y - y;
 
     // draw dashed rect
-    ctx.invariantCtx.strokeStyle = "#ffffff";
+    ctx.invariantCtx.strokeStyle = "black";
     ctx.invariantCtx.lineWidth = 1;
     ctx.invariantCtx.setLineDash([5, 5]);
     ctx.invariantCtx.strokeRect(x, y, width, height);
@@ -79,14 +89,18 @@ export class SelectTool implements EditTool {
 
     if (message === "copy") {
       ctx.data.drawToCanvas(ctx.invariantCtx);
-      ctx.clipboardCanvas.width = ctx.data.cropBox.width;
-      ctx.clipboardCanvas.height = ctx.data.cropBox.height;
+
+      const { x, y } = toolData.startPos;
+      const width = toolData.endPos.x - x;
+      const height = toolData.endPos.y - y;
+      ctx.clipboardCanvas.width = width;
+      ctx.clipboardCanvas.height = height;
       ctx.clipboardCtx.drawImage(
         ctx.invariantCanvas,
-        toolData.startPos.x,
-        toolData.startPos.y,
-        toolData.endPos.x - toolData.startPos.x,
-        toolData.endPos.y - toolData.startPos.y,
+        x,
+        y,
+        width,
+        height,
         0,
         0,
         ctx.clipboardCanvas.width,
