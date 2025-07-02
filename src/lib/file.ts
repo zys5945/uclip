@@ -47,8 +47,23 @@ async function convertBinaryToImageData(
 
 export async function readFileIntoStore(path: string) {
   const binary = await readFile(path);
-  const imageData = await convertBinaryToImageData(path, binary);
-  editDataStore.trigger.add({ data: new EditData(path, imageData) });
+
+  if (path.endsWith(".json")) {
+    const rawData = JSON.parse(new TextDecoder().decode(binary)) as EditData;
+    const editData = new EditData(rawData.filepath, rawData.originalImageData);
+    for (const key of Object.keys(rawData)) {
+      (editData as any)[key] = (rawData as any)[key];
+    }
+    editData.originalImageData = new ImageData(
+      new Uint8ClampedArray(rawData.originalImageData.data),
+      rawData.originalImageData.width,
+      rawData.originalImageData.height
+    );
+    editDataStore.trigger.add({ data: editData });
+  } else {
+    const imageData = await convertBinaryToImageData(path, binary);
+    editDataStore.trigger.add({ data: new EditData(path, imageData) });
+  }
 }
 
 export async function selectDirectory() {
@@ -97,7 +112,38 @@ export async function selectFile() {
   }
 }
 
-export async function saveCurrentEditData() {}
+export async function saveCurrentEditData() {
+  const currentEditData = getCurrentEditData();
+  if (!currentEditData) {
+    return;
+  }
+
+  const path = await save({
+    filters: [
+      {
+        name: "Json",
+        extensions: ["json"],
+      },
+    ],
+    defaultPath: currentEditData.filename + ".json",
+  });
+
+  if (!path) {
+    return;
+  }
+
+  const data = JSON.stringify(currentEditData, (key, value) => {
+    if (key === "originalImageData") {
+      return {
+        width: value.width,
+        height: value.height,
+        data: Array.from(value.data),
+      };
+    }
+    return value;
+  });
+  writeFile(path, new TextEncoder().encode(data));
+}
 
 export async function exportCurrentImage() {
   const currentEditData = getCurrentEditData();
