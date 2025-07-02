@@ -13,7 +13,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { CropTool, CropToolSubToolbar } from "./crop";
 import { EditContext, EditTool } from "./edit-context";
 import { PanTool } from "./pan";
-import { PenTool } from "./pen";
+import { PenTool, PenToolSubToolbar } from "./pen";
 import { ZoomTool, ZoomToolSubToolbar } from "./zoom";
 import { editDataStore } from "../edit-data";
 import { useSelector } from "@xstate/store/react";
@@ -128,12 +128,10 @@ export function Toolbar({
         subToolbar = <ZoomToolSubToolbar editContextRef={editContextRef} />;
         break;
       case "crop":
-        subToolbar = (
-          <CropToolSubToolbar
-            editContextRef={editContextRef}
-            onExit={() => useTool("pan")}
-          />
-        );
+        subToolbar = <CropToolSubToolbar editContextRef={editContextRef} />;
+        break;
+      case "pen":
+        subToolbar = <PenToolSubToolbar />;
         break;
     }
 
