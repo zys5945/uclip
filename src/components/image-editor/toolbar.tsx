@@ -128,7 +128,12 @@ export function Toolbar({
         subToolbar = <ZoomToolSubToolbar editContextRef={editContextRef} />;
         break;
       case "crop":
-        subToolbar = <CropToolSubToolbar editContextRef={editContextRef} />;
+        subToolbar = (
+          <CropToolSubToolbar
+            editContextRef={editContextRef}
+            onExit={() => useTool("pan")}
+          />
+        );
         break;
       case "pen":
         subToolbar = <PenToolSubToolbar />;
