@@ -12,13 +12,13 @@ import { Separator } from "@/components/ui/separator";
 import {
   selectFile,
   selectDirectory,
-  saveCurrentImage,
+  saveCurrentEditData,
   exportCurrentImage,
   clearAll,
 } from "@/lib/file";
 import "./titlebar.css";
 import React from "react";
-import { getSelectedEditData } from "./edit-data";
+import { getCurrentEditData } from "./edit-data";
 
 export function Titlebar() {
   const [menuOpen, setMenuOpen] = useState<string | null>(null);
@@ -79,13 +79,13 @@ export function Titlebar() {
       [
         {
           label: "Save",
-          onClick: saveCurrentImage,
-          enabled: () => getSelectedEditData() !== null,
+          onClick: saveCurrentEditData,
+          enabled: () => getCurrentEditData() !== null,
         },
         {
           label: "Export",
           onClick: exportCurrentImage,
-          enabled: () => getSelectedEditData() !== null,
+          enabled: () => getCurrentEditData() !== null,
         },
       ],
       [{ label: "Clear All", onClick: clearAll }],

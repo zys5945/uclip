@@ -2,7 +2,11 @@ import { join } from "@tauri-apps/api/path";
 import { open, save } from "@tauri-apps/plugin-dialog";
 import { readDir, readFile, writeFile } from "@tauri-apps/plugin-fs";
 
-import { EditData, editDataStore } from "../components/edit-data";
+import {
+  EditData,
+  editDataStore,
+  getCurrentEditData,
+} from "../components/edit-data";
 
 const _canvas = document.createElement("canvas");
 const _ctx = _canvas.getContext("2d", { willReadFrequently: true });
@@ -93,61 +97,53 @@ export async function selectFile() {
   }
 }
 
-export async function saveCurrentImage() {
-  const currentEditData = editDataStore.getSnapshot().context.currentEditData;
+export async function saveCurrentEditData() {}
+
+export async function exportCurrentImage() {
+  const currentEditData = getCurrentEditData();
   if (!currentEditData) {
     return;
   }
 
-  // Create a canvas to render the current image
-  const canvas = document.createElement("canvas");
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return;
-
-  canvas.width = currentEditData.cropBox.width;
-  canvas.height = currentEditData.cropBox.height;
-
-  // Create a temporary canvas for the full image
-  const tempCanvas = document.createElement("canvas");
-  const tempCtx = tempCanvas.getContext("2d");
+  const fullCanvas = document.createElement("canvas");
+  fullCanvas.width = currentEditData.originalImageData.width;
+  fullCanvas.height = currentEditData.originalImageData.height;
+  const tempCtx = fullCanvas.getContext("2d");
   if (!tempCtx) return;
 
-  tempCanvas.width = currentEditData.originalImageData.width;
-  tempCanvas.height = currentEditData.originalImageData.height;
+  const croppedCanvas = document.createElement("canvas");
+  croppedCanvas.width = currentEditData.cropBox.width;
+  croppedCanvas.height = currentEditData.cropBox.height;
+  const ctx = croppedCanvas.getContext("2d");
+  if (!ctx) return;
 
-  // Draw the full image with edits
   currentEditData.drawToCanvas(tempCtx);
+  currentEditData.cropToCanvas(fullCanvas, ctx);
 
-  // Crop to the final canvas
-  currentEditData.cropToCanvas(tempCanvas, ctx);
+  const path = await save({
+    filters: [
+      {
+        name: "PNG Image",
+        extensions: ["png"],
+      },
+      {
+        name: "JPEG Image",
+        extensions: ["jpg", "jpeg"],
+      },
+    ],
+  });
 
-  // Convert to blob and save
-  canvas.toBlob(async (blob) => {
-    if (!blob) return;
+  if (path) {
+    const suffix = path.split(".").pop();
+    const mimeType = suffix ? extensionToMimeType[suffix] : "image/png";
 
-    const path = await save({
-      filters: [
-        {
-          name: "PNG Image",
-          extensions: ["png"],
-        },
-        {
-          name: "JPEG Image",
-          extensions: ["jpg", "jpeg"],
-        },
-      ],
-    });
+    croppedCanvas.toBlob(async (blob) => {
+      if (!blob) return;
 
-    if (path) {
       const arrayBuffer = await blob.arrayBuffer();
-      await writeFile(path, new Uint8Array(arrayBuffer));
-    }
-  }, "image/png");
-}
-
-export async function exportCurrentImage() {
-  // For now, export is the same as save
-  await saveCurrentImage();
+      writeFile(path, new Uint8Array(arrayBuffer));
+    }, mimeType);
+  }
 }
 
 export function clearAll() {

@@ -240,6 +240,6 @@ export const editDataStore = createStore({
   },
 });
 
-export function getSelectedEditData(): EditData | null {
+export function getCurrentEditData(): EditData | null {
   return editDataStore.getSnapshot().context.currentEditData;
 }
