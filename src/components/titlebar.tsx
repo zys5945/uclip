@@ -96,7 +96,7 @@ export function Titlebar() {
     <div className="titlebar" data-tauri-drag-region>
       {/* left side */}
       <div className="flex items-center gap-2 px-3">
-        <div className="w-4 h-4 bg-white rounded-sm flex items-center justify-center text-xs font-bold text-white">
+        <div className="w-4 h-4 bg-white rounded-sm flex items-center justify-center text-xs font-bold text-black">
           U
         </div>
 
