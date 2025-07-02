@@ -1,15 +1,11 @@
 import { UndoIcon, RedoIcon } from "lucide-react";
 import { useSelector } from "@xstate/store/react";
-import { useEffect, useState } from "react";
+import { useEffect, useReducer } from "react";
 
 import { editDataStore, EditAction, EditData } from "./edit-data";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-
-interface UndoStackDisplayProps {
-  className?: string;
-}
 
 function getActionDisplayName(action: EditAction): string {
   switch (action.type) {
@@ -34,24 +30,22 @@ function getActionDisplayName(action: EditAction): string {
   }
 }
 
-export function UndoStackDisplay({ className }: UndoStackDisplayProps) {
+export function ActionHistoryDisplay() {
   const currentEditData = useSelector(
     editDataStore,
     (state) => state.context.currentEditData
   );
-  const [, setUpdateTrigger] = useState(0);
+  const [, forceUpdate] = useReducer((state) => state + 1, 0);
 
-  // Listen to editDataUpdated events to re-render
   useEffect(() => {
     const subscription = editDataStore.on(
       "editDataUpdated",
       (event: { data: EditData }) => {
         if (event.data === currentEditData) {
-          setUpdateTrigger((prev) => prev + 1);
+          forceUpdate();
         }
       }
     );
-
     return () => {
       subscription.unsubscribe();
     };

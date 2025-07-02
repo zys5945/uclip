@@ -6,7 +6,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Slider } from "@/components/ui/slider";
-import React, { useState } from "react";
+import { useState } from "react";
 import { DrawnStroke } from "../edit-data";
 import { EditContext, EditTool } from "./edit-context";
 
@@ -21,11 +21,13 @@ let globalStrokeWidth = 5;
 export class PenTool implements EditTool {
   activate(ctx: EditContext, toolData: ToolData) {
     const onMouseDown = () => {
+      if (!ctx.data || !ctx.mousePos) return;
+
       toolData.currentStroke = {
         type: "stroke",
         color: globalStrokeColor,
         width: globalStrokeWidth,
-        points: [],
+        points: [ctx.data.toOriginalPos(ctx.mousePos.x, ctx.mousePos.y)],
       };
     };
 
@@ -33,7 +35,6 @@ export class PenTool implements EditTool {
       if (!ctx.isDragging || !ctx.mousePos || !ctx.lastMousePos || !ctx.data) {
         return;
       }
-
       toolData.currentStroke!.points.push(
         ctx.data.toOriginalPos(ctx.mousePos.x, ctx.mousePos.y)
       );
@@ -113,7 +114,7 @@ export function PenToolSubToolbar() {
           <Button
             variant="outline"
             size="sm"
-            className="size-6 rounded-full"
+            className="size-6 rounded-full border-0"
             style={{ backgroundColor: strokeColor }}
             aria-label="Choose color"
           />

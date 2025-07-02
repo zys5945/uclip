@@ -13,6 +13,7 @@ import { ImageEditor, ImageEditorHandle } from "./image-editor";
 import { ImageExplorer } from "./image-explorer";
 import { InfoPanel } from "./info-panel";
 import { handleShortcuts } from "./shortcuts";
+import { ActionHistoryDisplay } from "./action-history-display";
 
 const previewMinWidthPx = 200;
 const previewStartSize = 15;
@@ -99,7 +100,10 @@ export function Main() {
         defaultSize={propertiesStartSize}
         minSize={propertiesMinSize}
       >
-        <InfoPanel />
+        <div className="w-full h-full flex flex-col p-4 gap-2">
+          <InfoPanel />
+          <ActionHistoryDisplay />
+        </div>
       </ResizablePanel>
     </ResizablePanelGroup>
   );

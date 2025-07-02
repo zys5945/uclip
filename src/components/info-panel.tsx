@@ -3,7 +3,7 @@ import { useSelector } from "@xstate/store/react";
 
 import { canvasInfoStore } from "./image-editor/canvas-info";
 import { Separator } from "@/components/ui/separator";
-import { UndoStackDisplay } from "./undo-stack-display";
+import React from "react";
 
 export function InfoPanel() {
   const canvasInfo = useSelector(canvasInfoStore, (state) => state.context);
@@ -19,7 +19,7 @@ export function InfoPanel() {
   }
 
   return (
-    <div className="w-full h-full flex flex-col p-4 gap-2">
+    <React.Fragment>
       <div className="font-semibold">Cursor Position</div>
       <div className="flex flex-col gap-2">
         <div className="flex justify-between">
@@ -73,7 +73,6 @@ export function InfoPanel() {
         <span>{hsl && hsl.join(", ")}</span>
       </div>
       <Separator className="my-2" />
-      <UndoStackDisplay />
-    </div>
+    </React.Fragment>
   );
 }
