@@ -53,16 +53,18 @@ function ToolButton({
   label: string;
 } & React.ComponentProps<typeof ToggleGroupItem>) {
   return (
-    <Tooltip delayDuration={400}>
-      <TooltipTrigger asChild>
-        <ToggleGroupItem value={value} {...props}>
-          {React.createElement(icon)}
-        </ToggleGroupItem>
-      </TooltipTrigger>
-      <TooltipContent side="bottom">
-        <p className="text-md">{label}</p>
-      </TooltipContent>
-    </Tooltip>
+    <ToggleGroupItem value={value} className="px-0" {...props}>
+      <Tooltip delayDuration={400}>
+        <TooltipTrigger asChild>
+          <div className="size-8 flex items-center justify-center">
+            {React.createElement(icon)}
+          </div>
+        </TooltipTrigger>
+        <TooltipContent side="bottom">
+          <p className="text-md">{label}</p>
+        </TooltipContent>
+      </Tooltip>
+    </ToggleGroupItem>
   );
 }
 
@@ -84,6 +86,7 @@ export function Toolbar({
   );
 
   const useTool = (toolName: ToolName) => {
+    console.log("use tool", toolName);
     const ctx = editContextRef?.current;
     if (!ctx || !ctx.data) {
       setCurrentToolName("null");
