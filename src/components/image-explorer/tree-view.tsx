@@ -8,6 +8,7 @@ import { EditData, editDataStore } from "../edit-data";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "../ui/scroll-area";
 import React from "react";
+import { exportCurrentImage, saveCurrentEditData } from "@/lib/file";
 
 const pathSep = sep();
 
@@ -388,6 +389,35 @@ const RenderDirectoryNode = ({
   );
 };
 
+function useShortcuts() {
+  const handleShortcuts = (e: KeyboardEvent) => {
+    if (e.key === "Delete") {
+      editDataStore.trigger.removeCurrentEditData();
+      return;
+    }
+
+    if (!e.ctrlKey) return;
+
+    switch (e.key) {
+      case "s":
+        saveCurrentEditData();
+        break;
+      case "e":
+        exportCurrentImage();
+        break;
+    }
+  };
+
+  const containerCallback = useCallback((node: HTMLDivElement) => {
+    node?.addEventListener("keydown", handleShortcuts);
+    return () => {
+      node?.removeEventListener("keydown", handleShortcuts);
+    };
+  }, []);
+
+  return containerCallback;
+}
+
 export const DirectoryTree = () => {
   const uiContext = useSelector(imageUIStore, (state) => state.context);
 
@@ -395,8 +425,14 @@ export const DirectoryTree = () => {
     return null;
   }
 
+  const containerCallback = useShortcuts();
+
   return (
-    <ScrollArea className="w-full h-full flex flex-col p-2 select-none transition-colors duration-150">
+    <ScrollArea
+      tabIndex={0}
+      ref={containerCallback}
+      className="w-full h-full flex flex-col p-2 select-none transition-colors duration-150"
+    >
       <RenderDirectoryNode node={uiContext.root} showSelf={false} />
     </ScrollArea>
   );

@@ -94,6 +94,7 @@ export function Titlebar() {
       [
         {
           label: "Remove Selected",
+          shortcut: "Delete",
           onClick: () => editDataStore.trigger.removeCurrentEditData(),
           enabled: () => getCurrentEditData() !== null,
         },
