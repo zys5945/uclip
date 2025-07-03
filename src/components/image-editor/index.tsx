@@ -7,37 +7,28 @@ import { canvasInfoStore } from "./canvas-info";
 import { EditContext } from "./edit-context";
 import { TOOL_NAMES, Toolbar, ToolbarHandle } from "./toolbar";
 
-function copyInfoPanel() {
-  const canvasInfo = canvasInfoStore.getSnapshot().context;
+function useEditingCanvas(
+  canvasRef: React.RefObject<HTMLCanvasElement | null>,
+  canvasContainerRef: React.RefObject<HTMLDivElement | null>,
+  toolbarRef: React.RefObject<ToolbarHandle | null>,
+  editContext: React.RefObject<EditContext | null>
+): [
+  (canvas: HTMLCanvasElement) => void,
+  (canvasContainer: HTMLDivElement) => void
+] {
+  function updateCanvasSize() {
+    if (!canvasContainerRef.current || !canvasRef.current) return;
 
-  if (!canvasInfo.mousePos || !canvasInfo.color) return;
+    const containerBounds = canvasContainerRef.current.getBoundingClientRect();
+    canvasRef.current.width = containerBounds.width;
+    canvasRef.current.height = containerBounds.height;
 
-  navigator.clipboard.writeText(
-    `((${canvasInfo.mousePos.x.toFixed(0)}, ${canvasInfo.mousePos.y.toFixed(
-      0
-    )}), (${canvasInfo.color[0]}, ${canvasInfo.color[1]}, ${
-      canvasInfo.color[2]
-    }))`
-  );
-}
+    if (editContext.current) {
+      editContext.current.cancelAnimationFrame();
+      editContext.current.draw();
+    }
+  }
 
-function copySelection(toolbarHandle: ToolbarHandle) {
-  toolbarHandle.messageTool("copy");
-}
-
-export function ImageEditor() {
-  const currentEditData = useSelector(
-    editDataStore,
-    (state) => state.context.currentEditData
-  );
-
-  const toolbarRef = useRef<ToolbarHandle>(null);
-  const canvasContainerRef = useRef<HTMLDivElement | null>(null);
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-
-  const editContext = useRef<EditContext | null>(null);
-
-  // edit context is 1:1 with canvas
   const canvasCallback = useCallback((canvas: HTMLCanvasElement) => {
     canvasRef.current = canvas;
     updateCanvasSize();
@@ -65,32 +56,6 @@ export function ImageEditor() {
     };
   }, []);
 
-  // set data when it changes
-  useEffect(() => {
-    if (!editContext.current) return;
-    editContext.current.setData(currentEditData);
-
-    if (toolbarRef.current) {
-      toolbarRef.current.useTool("pan");
-    }
-
-    editContext.current.draw();
-  }, [currentEditData]);
-
-  // update canvas width and height on resize
-  function updateCanvasSize() {
-    if (!canvasContainerRef.current || !canvasRef.current) return;
-
-    const containerBounds = canvasContainerRef.current.getBoundingClientRect();
-    canvasRef.current.width = containerBounds.width;
-    canvasRef.current.height = containerBounds.height;
-
-    if (editContext.current) {
-      editContext.current.cancelAnimationFrame();
-      editContext.current.draw();
-    }
-  }
-
   const canvasContainerCallback = useCallback(
     (canvasContainer: HTMLDivElement) => {
       canvasContainerRef.current = canvasContainer;
@@ -101,7 +66,28 @@ export function ImageEditor() {
     []
   );
 
-  // shortcuts
+  return [canvasCallback, canvasContainerCallback];
+}
+
+function copyInfoPanel() {
+  const canvasInfo = canvasInfoStore.getSnapshot().context;
+
+  if (!canvasInfo.mousePos || !canvasInfo.color) return;
+
+  navigator.clipboard.writeText(
+    `((${canvasInfo.mousePos.x.toFixed(0)}, ${canvasInfo.mousePos.y.toFixed(
+      0
+    )}), (${canvasInfo.color[0]}, ${canvasInfo.color[1]}, ${
+      canvasInfo.color[2]
+    }))`
+  );
+}
+
+function copySelection(toolbarHandle: ToolbarHandle) {
+  toolbarHandle.messageTool("copy");
+}
+
+function useShortcuts(toolbarRef: React.RefObject<ToolbarHandle | null>) {
   const handleShortcuts = (e: KeyboardEvent) => {
     if (!toolbarRef.current) return;
     const toolbarHandle = toolbarRef.current;
@@ -148,12 +134,49 @@ export function ImageEditor() {
         break;
     }
   };
+
   const containerCallback = useCallback((node: HTMLDivElement) => {
     node?.addEventListener("keydown", handleShortcuts);
     return () => {
       node?.removeEventListener("keydown", handleShortcuts);
     };
   }, []);
+
+  return containerCallback;
+}
+
+export function ImageEditor() {
+  const currentEditData = useSelector(
+    editDataStore,
+    (state) => state.context.currentEditData
+  );
+
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const canvasContainerRef = useRef<HTMLDivElement | null>(null);
+  const toolbarRef = useRef<ToolbarHandle>(null);
+  const editContext = useRef<EditContext | null>(null);
+
+  const [canvasCallback, canvasContainerCallback] = useEditingCanvas(
+    canvasRef,
+    canvasContainerRef,
+    toolbarRef,
+    editContext
+  );
+
+  // set data when it changes
+  useEffect(() => {
+    if (!editContext.current) return;
+    editContext.current.setData(currentEditData);
+
+    if (toolbarRef.current) {
+      toolbarRef.current.useTool("pan");
+    }
+
+    editContext.current.draw();
+  }, [currentEditData]);
+
+  // shortcuts
+  const containerCallback = useShortcuts(toolbarRef);
 
   return currentEditData ? (
     <div
