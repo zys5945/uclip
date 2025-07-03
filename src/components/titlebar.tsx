@@ -120,27 +120,23 @@ export function Titlebar() {
                 {items.map((itemGroup, i) => (
                   <React.Fragment key={i}>
                     {itemGroup.map(({ label, shortcut, onClick, enabled }) => (
-                      <div
+                      <Button
                         key={label}
-                        className="h-8 flex justify-between hover:bg-white/20 items-center"
+                        variant="ghost"
+                        disabled={enabled ? !enabled() : false}
+                        className="w-full h-8 flex justify-between hover:bg-white/20 items-center"
+                        onClick={() => {
+                          setMenuOpen(null);
+                          onClick();
+                        }}
                       >
-                        <Button
-                          variant="ghost"
-                          disabled={enabled ? !enabled() : false}
-                          className="text-sm"
-                          onClick={() => {
-                            setMenuOpen(null);
-                            onClick();
-                          }}
-                        >
-                          {label}
-                        </Button>
+                        <span>{label}</span>
                         {shortcut && (
-                          <span className="text-xs text-muted-foreground mr-4">
+                          <span className="text-xs text-muted-foreground">
                             {shortcut}
                           </span>
                         )}
-                      </div>
+                      </Button>
                     ))}
                     {i < items.length - 1 && <Separator className="my-1" />}
                   </React.Fragment>
