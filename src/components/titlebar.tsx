@@ -18,7 +18,7 @@ import {
 } from "@/lib/file";
 import "./titlebar.css";
 import React from "react";
-import { getCurrentEditData } from "./edit-data";
+import { editDataStore, getCurrentEditData } from "./edit-data";
 
 export function Titlebar() {
   const [menuOpen, setMenuOpen] = useState<string | null>(null);
@@ -91,7 +91,14 @@ export function Titlebar() {
           enabled: () => getCurrentEditData() !== null,
         },
       ],
-      [{ label: "Clear All", onClick: clearAll }],
+      [
+        {
+          label: "Remove Selected",
+          onClick: () => editDataStore.trigger.removeCurrentEditData(),
+          enabled: () => getCurrentEditData() !== null,
+        },
+        { label: "Clear All", onClick: clearAll },
+      ],
     ],
   };
 

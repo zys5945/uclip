@@ -185,7 +185,6 @@ export class EditData {
 export const editDataStore = createStore({
   context: {
     editDatas: [] as EditData[],
-    dirtyEditDatas: [] as EditData[],
     currentEditData: null as EditData | null,
   },
   on: {
@@ -224,11 +223,30 @@ export const editDataStore = createStore({
       return context;
     },
 
+    removeCurrentEditData: (context, _event, enq) => {
+      const index = context.editDatas.findIndex(
+        (data) => data.filepath === context.currentEditData?.filepath
+      );
+      if (index === -1) {
+        return context;
+      }
+
+      const newContext = {
+        ...context,
+        editDatas: context.editDatas.filter(
+          (data) => data.filepath !== context.currentEditData?.filepath
+        ),
+        currentEditData: null,
+      };
+
+      enq.emit.clear();
+      return newContext;
+    },
+
     clear: (_, _event, enq) => {
       enq.emit.clear();
       return {
         editDatas: [],
-        dirtyEditDatas: [],
         currentEditData: null,
       };
     },
