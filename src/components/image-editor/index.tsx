@@ -1,6 +1,7 @@
 import { useSelector } from "@xstate/store/react";
 import { useCallback, useEffect, useRef } from "react";
 
+import { exportCurrentImage, saveCurrentEditData } from "@/lib/file";
 import { editDataStore } from "../edit-data";
 import { canvasInfoStore } from "./canvas-info";
 import { EditContext } from "./edit-context";
@@ -128,6 +129,12 @@ export function ImageEditor() {
         } else {
           copyInfoPanel();
         }
+        break;
+      case "s":
+        saveCurrentEditData();
+        break;
+      case "e":
+        exportCurrentImage();
         break;
       case "z":
         if (e.shiftKey) {

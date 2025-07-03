@@ -67,6 +67,7 @@ export function Titlebar() {
   const buttons: {
     [menuName: string]: {
       label: string;
+      shortcut?: string;
       onClick: () => void;
       enabled?: () => boolean;
     }[][];
@@ -79,11 +80,13 @@ export function Titlebar() {
       [
         {
           label: "Save",
+          shortcut: "Ctrl + S",
           onClick: saveCurrentEditData,
           enabled: () => getCurrentEditData() !== null,
         },
         {
           label: "Export",
+          shortcut: "Ctrl + E",
           onClick: exportCurrentImage,
           enabled: () => getCurrentEditData() !== null,
         },
@@ -116,19 +119,28 @@ export function Titlebar() {
               <div className="space-y-1">
                 {items.map((itemGroup, i) => (
                   <React.Fragment key={i}>
-                    {itemGroup.map(({ label, onClick, enabled }) => (
-                      <Button
+                    {itemGroup.map(({ label, shortcut, onClick, enabled }) => (
+                      <div
                         key={label}
-                        variant="ghost"
-                        className="w-full justify-start text-sm h-8 hover:bg-white/20"
-                        disabled={enabled ? !enabled() : false}
-                        onClick={() => {
-                          setMenuOpen(null);
-                          onClick();
-                        }}
+                        className="h-8 flex justify-between hover:bg-white/20 items-center"
                       >
-                        {label}
-                      </Button>
+                        <Button
+                          variant="ghost"
+                          disabled={enabled ? !enabled() : false}
+                          className="text-sm"
+                          onClick={() => {
+                            setMenuOpen(null);
+                            onClick();
+                          }}
+                        >
+                          {label}
+                        </Button>
+                        {shortcut && (
+                          <span className="text-xs text-muted-foreground mr-4">
+                            {shortcut}
+                          </span>
+                        )}
+                      </div>
                     ))}
                     {i < items.length - 1 && <Separator className="my-1" />}
                   </React.Fragment>
