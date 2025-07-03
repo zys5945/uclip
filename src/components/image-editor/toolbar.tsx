@@ -7,9 +7,14 @@ import {
   SquareDashed,
   UndoIcon,
 } from "lucide-react";
-import { useState, useImperativeHandle } from "react";
+import React, { useState, useImperativeHandle } from "react";
 
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { CropTool, CropToolSubToolbar } from "./crop";
 import { EditContext, EditTool } from "./edit-context";
 import { PanTool } from "./pan";
@@ -35,6 +40,30 @@ export interface ToolbarHandle {
   getCurrentToolName: () => ToolName | null;
   useTool: (toolName: ToolName) => void;
   messageTool: (message: string) => void;
+}
+
+function ToolButton({
+  value,
+  icon,
+  label,
+  ...props
+}: {
+  value: ToolName;
+  icon: React.ComponentType;
+  label: string;
+} & React.ComponentProps<typeof ToggleGroupItem>) {
+  return (
+    <Tooltip delayDuration={400}>
+      <TooltipTrigger asChild>
+        <ToggleGroupItem value={value} {...props}>
+          {React.createElement(icon)}
+        </ToggleGroupItem>
+      </TooltipTrigger>
+      <TooltipContent side="bottom">
+        <p className="text-md">{label}</p>
+      </TooltipContent>
+    </Tooltip>
+  );
 }
 
 export function Toolbar({
@@ -149,39 +178,79 @@ export function Toolbar({
     }
   };
 
+  const toolButtons: {
+    value: ToolName;
+    icon: React.ComponentType;
+    label: string;
+  }[] = [
+    {
+      value: "pan",
+      icon: MoveIcon,
+      label: "Pan Tool (Ctrl+1)",
+    },
+    {
+      value: "select",
+      icon: SquareDashed,
+      label: "Select Tool (Ctrl+2)",
+    },
+    {
+      value: "zoom",
+      icon: SearchIcon,
+      label: "Zoom Tool (Ctrl+3)",
+    },
+    {
+      value: "crop",
+      icon: CropIcon,
+      label: "Crop Tool (Ctrl+4)",
+    },
+    {
+      value: "pen",
+      icon: PencilIcon,
+      label: "Pen Tool (Ctrl+5)",
+    },
+    {
+      value: "undo",
+      icon: UndoIcon,
+      label: "Undo (Ctrl+Z)",
+    },
+    {
+      value: "redo",
+      icon: RedoIcon,
+      label: "Redo (Ctrl+Shift+Z)",
+    },
+  ];
+
   return (
     <div className="flex p-2 gap-2">
       {/* main toolbar */}
-      <div className="flex gap-2 p-1 bg-stone-700 rounded-md">
-        <ToggleGroup
-          type="single"
-          className="gap-1"
-          value={currentToolName}
-          onValueChange={(value) => useTool((value as any) || "pan")}
-        >
-          <ToggleGroupItem value="pan">
-            <MoveIcon />
-          </ToggleGroupItem>
-          <ToggleGroupItem value="select">
-            <SquareDashed />
-          </ToggleGroupItem>
-          <ToggleGroupItem value="zoom">
-            <SearchIcon />
-          </ToggleGroupItem>
-          <ToggleGroupItem value="crop">
-            <CropIcon />
-          </ToggleGroupItem>
-          <ToggleGroupItem value="pen">
-            <PencilIcon />
-          </ToggleGroupItem>
-          <ToggleGroupItem value="undo" disabled={undoStackLength === 0}>
-            <UndoIcon />
-          </ToggleGroupItem>
-          <ToggleGroupItem value="redo" disabled={redoStackLength === 0}>
-            <RedoIcon />
-          </ToggleGroupItem>
-        </ToggleGroup>
-      </div>
+      <ToggleGroup
+        type="single"
+        className="flex gap-2 p-1 bg-stone-700 rounded-md"
+        value={currentToolName}
+        onValueChange={(value) => useTool((value as any) || "pan")}
+      >
+        {toolButtons.map((button) => {
+          if (button.value === "undo") {
+            return (
+              <ToolButton
+                key={button.value}
+                disabled={undoStackLength === 0}
+                {...button}
+              />
+            );
+          } else if (button.value === "redo") {
+            return (
+              <ToolButton
+                key={button.value}
+                disabled={redoStackLength === 0}
+                {...button}
+              />
+            );
+          } else {
+            return <ToolButton key={button.value} {...button} />;
+          }
+        })}
+      </ToggleGroup>
 
       {/* sub toolbar */}
       {renderSubToolbar()}
