@@ -1,24 +1,25 @@
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { Minus, PictureInPicture2, Square, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 
+import { Button } from "@/components/ui/button";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
-  selectFile,
-  selectDirectory,
-  saveCurrentEditData,
-  exportCurrentImage,
   clearAll,
+  exportCurrentImage,
+  saveCurrentEditData,
+  selectDirectory,
+  selectFile,
 } from "@/lib/file";
-import "./titlebar.css";
-import React from "react";
 import { editDataStore, getCurrentEditData } from "./edit-data";
+import "./titlebar.css";
+
+import icon from "@/assets/icon_128x128.png";
 
 export function Titlebar() {
   const [menuOpen, setMenuOpen] = useState<string | null>(null);
@@ -107,9 +108,7 @@ export function Titlebar() {
     <div className="titlebar" data-tauri-drag-region>
       {/* left side */}
       <div className="flex items-center gap-2 px-3">
-        <div className="w-4 h-4 bg-white rounded-sm flex items-center justify-center text-xs font-bold text-black">
-          U
-        </div>
+        <img src={icon} className="w-6 h-6" />
 
         {/* menu items*/}
         {Object.entries(buttons).map(([name, items]) => (
