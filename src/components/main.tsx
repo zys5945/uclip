@@ -3,7 +3,7 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   getPanelGroupElement,
   getResizeHandleElement,
