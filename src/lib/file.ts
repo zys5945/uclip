@@ -112,12 +112,7 @@ export async function selectFile() {
   }
 }
 
-export async function saveCurrentEditData() {
-  const currentEditData = getCurrentEditData();
-  if (!currentEditData) {
-    return;
-  }
-
+export async function saveEditData(editData: EditData) {
   const path = await save({
     filters: [
       {
@@ -125,14 +120,14 @@ export async function saveCurrentEditData() {
         extensions: ["json"],
       },
     ],
-    defaultPath: currentEditData.filename + ".json",
+    defaultPath: editData.filename + ".json",
   });
 
   if (!path) {
     return;
   }
 
-  const data = JSON.stringify(currentEditData, (key, value) => {
+  const data = JSON.stringify(editData, (key, value) => {
     if (key === "originalImageData") {
       return {
         width: value.width,
@@ -145,26 +140,29 @@ export async function saveCurrentEditData() {
   writeFile(path, new TextEncoder().encode(data));
 }
 
-export async function exportCurrentImage() {
+export async function saveCurrentEditData() {
   const currentEditData = getCurrentEditData();
   if (!currentEditData) {
     return;
   }
+  await saveEditData(currentEditData);
+}
 
+export async function exportImage(editData: EditData) {
   const fullCanvas = document.createElement("canvas");
-  fullCanvas.width = currentEditData.originalImageData.width;
-  fullCanvas.height = currentEditData.originalImageData.height;
+  fullCanvas.width = editData.originalImageData.width;
+  fullCanvas.height = editData.originalImageData.height;
   const tempCtx = fullCanvas.getContext("2d");
   if (!tempCtx) return;
 
   const croppedCanvas = document.createElement("canvas");
-  croppedCanvas.width = currentEditData.cropBox.width;
-  croppedCanvas.height = currentEditData.cropBox.height;
+  croppedCanvas.width = editData.cropBox.width;
+  croppedCanvas.height = editData.cropBox.height;
   const ctx = croppedCanvas.getContext("2d");
   if (!ctx) return;
 
-  currentEditData.drawToCanvas(tempCtx);
-  currentEditData.cropToCanvas(fullCanvas, ctx);
+  editData.drawToCanvas(tempCtx);
+  editData.cropToCanvas(fullCanvas, ctx);
 
   const path = await save({
     filters: [
@@ -190,6 +188,14 @@ export async function exportCurrentImage() {
       writeFile(path, new Uint8Array(arrayBuffer));
     }, mimeType);
   }
+}
+
+export async function exportCurrentImage() {
+  const currentEditData = getCurrentEditData();
+  if (!currentEditData) {
+    return;
+  }
+  await exportImage(currentEditData);
 }
 
 export function clearAll() {

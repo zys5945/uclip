@@ -86,7 +86,6 @@ export function Toolbar({
   );
 
   const useTool = (toolName: ToolName) => {
-    console.log("use tool", toolName);
     const ctx = editContextRef?.current;
     if (!ctx || !ctx.data) {
       setCurrentToolName("null");

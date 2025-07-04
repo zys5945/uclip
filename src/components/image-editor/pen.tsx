@@ -20,8 +20,8 @@ let globalStrokeWidth = 5;
 
 export class PenTool implements EditTool {
   activate(ctx: EditContext, toolData: ToolData) {
-    const onMouseDown = () => {
-      if (!ctx.data || !ctx.mousePos) return;
+    const onMouseDown = (e: MouseEvent) => {
+      if (!ctx.data || !ctx.mousePos || e.button !== 0) return;
 
       toolData.currentStroke = {
         type: "stroke",

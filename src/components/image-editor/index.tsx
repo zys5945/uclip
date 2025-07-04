@@ -1,6 +1,7 @@
 import { useSelector } from "@xstate/store/react";
 import { useCallback, useEffect, useRef } from "react";
 
+import { showContextMenu } from "@/lib/context-menu";
 import { exportCurrentImage, saveCurrentEditData } from "@/lib/file";
 import { editDataStore } from "../edit-data";
 import { canvasInfoStore } from "./canvas-info";
@@ -87,7 +88,9 @@ function copySelection(toolbarHandle: ToolbarHandle) {
   toolbarHandle.messageTool("copy");
 }
 
-function useShortcuts(toolbarRef: React.RefObject<ToolbarHandle | null>) {
+function useShortcutsAndContextMenu(
+  toolbarRef: React.RefObject<ToolbarHandle | null>
+) {
   const handleShortcuts = (e: KeyboardEvent) => {
     if (!toolbarRef.current) return;
     const toolbarHandle = toolbarRef.current;
@@ -135,10 +138,33 @@ function useShortcuts(toolbarRef: React.RefObject<ToolbarHandle | null>) {
     }
   };
 
+  const handleContextMenu = (e: MouseEvent) => {
+    showContextMenu(
+      { x: e.clientX, y: e.clientY },
+      {
+        items: [
+          {
+            text: "Save As",
+            action: () => saveCurrentEditData(),
+          },
+          {
+            text: "Export",
+            action: () => exportCurrentImage(),
+          },
+        ],
+      }
+    );
+  };
+
   const containerCallback = useCallback((node: HTMLDivElement) => {
-    node?.addEventListener("keydown", handleShortcuts);
+    if (!node) return;
+
+    node.addEventListener("keydown", handleShortcuts);
+    node.addEventListener("contextmenu", handleContextMenu);
+
     return () => {
-      node?.removeEventListener("keydown", handleShortcuts);
+      node.removeEventListener("keydown", handleShortcuts);
+      node.removeEventListener("contextmenu", handleContextMenu);
     };
   }, []);
 
@@ -176,7 +202,7 @@ export function ImageEditor() {
   }, [currentEditData]);
 
   // shortcuts
-  const containerCallback = useShortcuts(toolbarRef);
+  const containerCallback = useShortcutsAndContextMenu(toolbarRef);
 
   return currentEditData ? (
     <div

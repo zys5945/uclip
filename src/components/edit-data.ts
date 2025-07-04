@@ -182,6 +182,35 @@ export class EditData {
   }
 }
 
+function removeEditData(
+  context: { editDatas: EditData[]; currentEditData: EditData | null },
+  event: { data?: EditData | null },
+  enq: any
+) {
+  const { data: eventData } = event;
+  if (!eventData) return;
+  const index = context.editDatas.findIndex(
+    (data) => data.filepath === eventData.filepath
+  );
+  if (index === -1) {
+    return context;
+  }
+
+  const newContext = {
+    ...context,
+    editDatas: context.editDatas.filter(
+      (data) => data.filepath !== eventData.filepath
+    ),
+    currentEditData:
+      context.currentEditData?.filepath === eventData.filepath
+        ? null
+        : context.currentEditData,
+  };
+
+  enq.emit.removed({ data: eventData });
+  return newContext;
+}
+
 export const editDataStore = createStore({
   context: {
     editDatas: [] as EditData[],
@@ -223,24 +252,18 @@ export const editDataStore = createStore({
       return context;
     },
 
+    removeEditData: (context, event: { data: EditData }, enq) => {
+      return removeEditData(context, event, enq);
+    },
+
     removeCurrentEditData: (context, _event, enq) => {
-      const index = context.editDatas.findIndex(
-        (data) => data.filepath === context.currentEditData?.filepath
+      return removeEditData(
+        context,
+        {
+          data: context.currentEditData,
+        },
+        enq
       );
-      if (index === -1) {
-        return context;
-      }
-
-      const newContext = {
-        ...context,
-        editDatas: context.editDatas.filter(
-          (data) => data.filepath !== context.currentEditData?.filepath
-        ),
-        currentEditData: null,
-      };
-
-      enq.emit.clear();
-      return newContext;
     },
 
     clear: (_, _event, enq) => {
@@ -253,6 +276,7 @@ export const editDataStore = createStore({
   },
   emits: {
     added: (_payload: { data: EditData }) => {},
+    removed: (_payload: { data: EditData }) => {},
     editDataUpdated: (_payload: { data: EditData }) => {},
     clear: () => {},
   },

@@ -8,7 +8,14 @@ import { EditData, editDataStore } from "../edit-data";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "../ui/scroll-area";
 import React from "react";
-import { exportCurrentImage, saveCurrentEditData } from "@/lib/file";
+import {
+  exportCurrentImage,
+  exportImage,
+  saveCurrentEditData,
+  saveEditData,
+} from "@/lib/file";
+import { showContextMenu } from "@/lib/context-menu";
+import { MenuItemOptions } from "@tauri-apps/api/menu";
 
 const pathSep = sep();
 
@@ -56,6 +63,15 @@ class DirectoryNode extends FileSystemNode {
 
   addDirectory(directory: string[]) {
     this.getOrCreateOwningDirectory(directory);
+  }
+
+  findNodeWithData(editData: EditData | null): FileNode | null {
+    if (!editData) {
+      return null;
+    }
+    return this.find(
+      (node) => node instanceof FileNode && node.editData === editData
+    ) as FileNode | null;
   }
 
   private getOrCreateOwningDirectory(directory: string[]): DirectoryNode {
@@ -203,7 +219,32 @@ const imageUIStore = createStore({
         event.data.filename,
         event.data
       );
-      return context;
+      return {
+        ...context,
+      };
+    },
+
+    remove: (context, event: { data: EditData }) => {
+      const node = context.root.findNodeWithData(event.data);
+      if (!node) {
+        return context;
+      }
+
+      let toRemove: FileSystemNode = node;
+      let parent = toRemove.parent!;
+
+      while (parent) {
+        parent.children = parent.children.filter((child) => child !== toRemove);
+        if (parent.children.length > 0) {
+          break;
+        }
+        toRemove = parent;
+        parent = parent.parent!;
+      }
+
+      return {
+        ...context,
+      };
     },
 
     selectNode(context, event: { node: FileSystemNode | null }) {
@@ -214,9 +255,7 @@ const imageUIStore = createStore({
     },
 
     selectNodeWithData: (context, event: { editData: EditData | null }) => {
-      const node = context.root.find(
-        (node) => node instanceof FileNode && node.editData === event.editData
-      );
+      const node = context.root.findNodeWithData(event.editData);
       if (!node) {
         return {
           root: context.root,
@@ -251,6 +290,9 @@ editDataStore.on("added", (event: { data: EditData }) => {
     imageUIStore.trigger.selectNodeWithData({ editData: event.data });
   }
 });
+editDataStore.on("removed", (event: { data: EditData }) => {
+  imageUIStore.trigger.remove({ data: event.data });
+});
 editDataStore.on("clear", (_) => {
   imageUIStore.trigger.clear();
 });
@@ -260,6 +302,59 @@ const currentEditData = editDataStore.select(
 currentEditData.subscribe((data) => {
   imageUIStore.trigger.selectNodeWithData({ editData: data });
 });
+
+function useContextMenu(node: FileSystemNode) {
+  let items: MenuItemOptions[];
+  if (node instanceof FileNode) {
+    items = [
+      {
+        text: "Save As",
+        action: () => saveEditData(node.editData),
+      },
+      {
+        text: "Export",
+        action: () => exportImage(node.editData),
+      },
+      {
+        text: "Remove",
+        action: () =>
+          editDataStore.trigger.removeEditData({ data: node.editData }),
+      },
+    ];
+  } else if (node instanceof DirectoryNode) {
+    items = [
+      {
+        text: "Remove Directory",
+        action: () => {
+          let nodes: FileSystemNode[] = [node];
+          while (nodes.length > 0) {
+            const curNode = nodes.shift()!;
+            if (curNode instanceof DirectoryNode) {
+              nodes = nodes.concat(curNode.children);
+            } else if (curNode instanceof FileNode) {
+              editDataStore.trigger.removeEditData({ data: curNode.editData });
+            }
+          }
+        },
+      },
+    ];
+  }
+
+  const handleContextMenu = (e: MouseEvent) => {
+    showContextMenu({ x: e.clientX, y: e.clientY }, { items });
+  };
+
+  const refCallback = useCallback((node: HTMLDivElement) => {
+    if (!node) return;
+
+    node.addEventListener("contextmenu", handleContextMenu);
+    return () => {
+      node.removeEventListener("contextmenu", handleContextMenu);
+    };
+  }, []);
+
+  return refCallback;
+}
 
 const renderCanvas = (canvas: HTMLCanvasElement | null, node: FileNode) => {
   if (!canvas) {
@@ -285,15 +380,15 @@ const RenderFileNode = ({ node }: { node: FileNode }) => {
   const isSelected = selectedNode === node;
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
-
   if (canvasRef.current) {
     node.drawToCanvas(canvasRef.current);
   }
-
   const canvasCallback = useCallback((canvas: HTMLCanvasElement) => {
     canvasRef.current = canvas;
     renderCanvas(canvasRef.current, node);
   }, []);
+
+  const containerRefCallback = useContextMenu(node);
 
   useEffect(() => {
     const sub = editDataStore.on(
@@ -325,6 +420,7 @@ const RenderFileNode = ({ node }: { node: FileNode }) => {
         isSelected && "bg-gray-600"
       )}
       onClick={onClick}
+      ref={containerRefCallback}
     >
       <div className="flex flex-col gap-1">
         <h1 className="mx-auto">{node.name}</h1>
@@ -348,6 +444,8 @@ const RenderDirectoryNode = ({
 }) => {
   const [isExpanded, setIsExpanded] = useState(node.isExpanded);
 
+  const containerRefCallback = useContextMenu(node);
+
   const onClick = () => {
     node.isExpanded = !node.isExpanded;
     setIsExpanded(!isExpanded);
@@ -360,6 +458,7 @@ const RenderDirectoryNode = ({
           className="flex items-center gap-2 cursor-pointer hover:bg-gray-800 py-2"
           style={{ paddingLeft: `${node.depth * 8}px` }}
           onClick={onClick}
+          ref={containerRefCallback}
         >
           <ChevronRight
             className={cn(
@@ -409,9 +508,11 @@ function useShortcuts() {
   };
 
   const containerCallback = useCallback((node: HTMLDivElement) => {
-    node?.addEventListener("keydown", handleShortcuts);
+    if (!node) return;
+
+    node.addEventListener("keydown", handleShortcuts);
     return () => {
-      node?.removeEventListener("keydown", handleShortcuts);
+      node.removeEventListener("keydown", handleShortcuts);
     };
   }, []);
 
