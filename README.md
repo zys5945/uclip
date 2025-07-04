@@ -1,6 +1,6 @@
 # uclip
 
-Lightweight desktop image snipping and annotation application built with Tauri + React.
+Lightweight image annotation application built with Tauri + React.
 
 ![Interface demo](.github/assets/interface-demo.png)
 
